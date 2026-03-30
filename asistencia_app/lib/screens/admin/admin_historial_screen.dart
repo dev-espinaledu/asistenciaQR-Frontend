@@ -1,0 +1,408 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../services/secure_storage.dart';
+
+class AdminHistorialScreen extends StatefulWidget {
+  const AdminHistorialScreen({super.key});
+
+  @override
+  State<AdminHistorialScreen> createState() => _AdminHistorialScreenState();
+}
+
+class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
+  List<dynamic> _registros = [];
+  List<dynamic> _filtrados = [];
+  List<dynamic> _usuariosParaEliminar = [];
+  bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  dynamic _usuarioEliminar;
+  DateTime? _fechaEliminar;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistorial();
+    _searchController.addListener(_filtrar);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchHistorial() async {
+    setState(() => _isLoading = true);
+    try {
+      final token = await SecureStorage.getToken();
+      final response = await http.get(
+        Uri.parse("http://192.168.101.17:3000/asistencia/todos"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _registros = jsonDecode(response.body);
+          _filtrados = _registros;
+        });
+      }
+    } catch (e) {
+      _showError("Error de conexión");
+    }
+    setState(() => _isLoading = false);
+  }
+
+  void _filtrar() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filtrados = _registros.where((item) {
+        final nombre =
+            "${item['nombres']} ${item['apellidos']}".toLowerCase();
+        return nombre.contains(query);
+      }).toList();
+    });
+  }
+
+  Future<void> _cargarUsuariosParaEliminar() async {
+    try {
+      final token = await SecureStorage.getToken();
+      final response = await http.get(
+        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+      if (response.statusCode == 200) {
+        _usuariosParaEliminar = jsonDecode(response.body);
+      }
+    } catch (e) {
+      _showError("Error al cargar usuarios");
+    }
+  }
+
+  Future<void> _mostrarDialogoEliminar() async {
+    await _cargarUsuariosParaEliminar();
+    _usuarioEliminar = null;
+    _fechaEliminar = null;
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_sweep, color: Colors.red),
+              SizedBox(width: 8),
+              Text("Eliminar registros"),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Selecciona los filtros. Si no seleccionas ninguno, se eliminarán TODOS los registros.",
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+
+              // ✅ Usuario con SimpleDialog — muestra correo
+              GestureDetector(
+                onTap: () async {
+                  final seleccionado = await showDialog<dynamic>(
+                    context: context,
+                    builder: (_) => SimpleDialog(
+                      title: const Text("Seleccionar usuario"),
+                      children: [
+                        SimpleDialogOption(
+                          onPressed: () => Navigator.pop(context, null),
+                          child: const Text("Todos los usuarios"),
+                        ),
+                        ..._usuariosParaEliminar.map((u) =>
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, u),
+                              child: Text(u['correo'] ?? ''), // ✅ correo
+                            )),
+                      ],
+                    ),
+                  );
+                  setDialogState(() => _usuarioEliminar = seleccionado);
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: "Usuario (opcional)",
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                  ),
+                  child: Text(
+                    _usuarioEliminar != null
+                        ? _usuarioEliminar['correo'] // ✅ correo
+                        : "Todos los usuarios",
+                    style: TextStyle(
+                      color: _usuarioEliminar != null
+                          ? Colors.black
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Fecha
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2025),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setDialogState(() => _fechaEliminar = picked);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: "Fecha (opcional)",
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    suffixIcon: Icon(Icons.calendar_today, size: 16),
+                  ),
+                  child: Text(
+                    _fechaEliminar != null
+                        ? "${_fechaEliminar!.year}-${_fechaEliminar!.month.toString().padLeft(2, '0')}-${_fechaEliminar!.day.toString().padLeft(2, '0')}"
+                        : "Todas las fechas",
+                    style: TextStyle(
+                      color: _fechaEliminar != null
+                          ? Colors.black
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+
+              if (_fechaEliminar != null)
+                TextButton.icon(
+                  icon: const Icon(Icons.close, size: 14),
+                  label: const Text("Quitar filtro de fecha"),
+                  onPressed: () =>
+                      setDialogState(() => _fechaEliminar = null),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.delete),
+              label: const Text("Eliminar"),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.pop(context);
+                _confirmarEliminar();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmarEliminar() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text("¿Estás seguro?"),
+        content: Text(
+          _usuarioEliminar == null && _fechaEliminar == null
+              ? "Se eliminarán TODOS los registros de asistencia. Esta acción no se puede deshacer."
+              : "Se eliminarán los registros seleccionados. Esta acción no se puede deshacer.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Sí, eliminar"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    await _eliminarRegistros();
+  }
+
+  Future<void> _eliminarRegistros() async {
+    try {
+      final token = await SecureStorage.getToken();
+      String url = "http://192.168.101.17:3000/asistencia/eliminar";
+      final params = <String>[];
+
+      if (_usuarioEliminar != null) {
+        params.add("idUsuario=${_usuarioEliminar['id_usuario']}");
+      }
+      if (_fechaEliminar != null) {
+        final f = _fechaEliminar!;
+        final fechaStr =
+            "${f.year}-${f.month.toString().padLeft(2, '0')}-${f.day.toString().padLeft(2, '0')}";
+        params.add("fecha=$fechaStr");
+      }
+
+      if (params.isNotEmpty) url += "?${params.join('&')}";
+
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _showSuccess("${data['eliminados']} registro(s) eliminado(s)");
+        _fetchHistorial();
+      } else {
+        _showError("Error al eliminar registros");
+      }
+    } catch (e) {
+      _showError("Error de conexión");
+    }
+  }
+
+  Color _colorEstado(String estado) {
+    switch (estado) {
+      case 'PUNTUAL': return Colors.green;
+      case 'TARDE': return Colors.orange;
+      case 'SIN_SALIDA': return Colors.red;
+      default: return Colors.grey;
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Historial General"),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            tooltip: "Eliminar registros",
+            onPressed: _mostrarDialogoEliminar,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchHistorial,
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: "Buscar por nombre...",
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _filtrados.isEmpty
+                      ? const Center(child: Text("No hay registros"))
+                      : RefreshIndicator(
+                          onRefresh: _fetchHistorial,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              child: DataTable(
+                                headingRowColor: WidgetStateProperty.all(
+                                  Colors.indigo.shade50,
+                                ),
+                                columns: const [
+                                  DataColumn(label: Text("Nombre")),
+                                  DataColumn(label: Text("Fecha")),
+                                  DataColumn(label: Text("Entrada")),
+                                  DataColumn(label: Text("Salida")),
+                                  DataColumn(label: Text("Estado")),
+                                ],
+                                rows: _filtrados.map((item) {
+                                  final fecha = item['fecha']
+                                      .toString()
+                                      .substring(0, 10);
+                                  return DataRow(cells: [
+                                    DataCell(Text(
+                                        "${item['nombres']} ${item['apellidos']}")),
+                                    DataCell(Text(fecha)),
+                                    DataCell(
+                                        Text(item['hora_entrada'] ?? '--')),
+                                    DataCell(
+                                        Text(item['hora_salida'] ?? '--')),
+                                    DataCell(
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: _colorEstado(item['estado'])
+                                              .withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          item['estado'],
+                                          style: TextStyle(
+                                            color: _colorEstado(
+                                                item['estado']),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ]);
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+    );
+  }
+}
