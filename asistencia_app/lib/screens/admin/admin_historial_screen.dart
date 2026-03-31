@@ -77,7 +77,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
         },
       );
       if (response.statusCode == 200) {
-        _usuariosParaEliminar = jsonDecode(response.body);
+        final todos = jsonDecode(response.body) as List;
+        // Excluir admins
+        _usuariosParaEliminar = todos.where((u) =>
+          u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
+        ).toList();
       }
     } catch (e) {
       _showError("Error al cargar usuarios");

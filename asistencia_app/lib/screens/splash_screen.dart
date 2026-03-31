@@ -24,6 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (loggedIn) {
       final rol = await SecureStorage.getRol();
+      if (!mounted) return; // verificar antes de usar context
       if (rol == "ADMIN") {
         Navigator.pushReplacementNamed(context, "/admin");
       } else {

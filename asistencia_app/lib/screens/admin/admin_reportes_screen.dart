@@ -43,7 +43,15 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
         },
       );
       if (response.statusCode == 200) {
-        setState(() => _usuarios = jsonDecode(response.body));
+        final todos = jsonDecode(response.body) as List;
+        setState(() {
+          // Excluir admins
+          _usuarios = todos
+              .where(
+                (u) => u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO',
+              )
+              .toList();
+        });
       }
     } catch (e) {
       _showError("Error al cargar usuarios");
@@ -118,11 +126,9 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     for (final r in _resultados) {
       final estado = r['estado'] as String;
       final sinSalida = r['hora_salida'] == null;
-
       if (estado == 'PUNTUAL' || estado == 'TARDE') {
         map[estado] = map[estado]! + 1;
       }
-
       if (sinSalida) {
         map['SIN_SALIDA'] = map['SIN_SALIDA']! + 1;
       }
@@ -130,74 +136,74 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     return map;
   }
 
-Future<void> _exportarExcel() async {
-  if (_resultados.isEmpty) {
-    _showError("No hay datos para exportar");
-    return;
-  }
-
-  try {
-    final token = await SecureStorage.getToken();
-    final desde = _formatFecha(_desde);
-    final hasta = _formatFecha(_hasta);
-
-    String url =
-        "http://192.168.101.17:3000/asistencia/excel?desde=$desde&hasta=$hasta";
-
-    if (_usuarioSeleccionado != null) {
-      url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
-    }
-    if (_estadoSeleccionado != null) {
-      url += "&estado=$_estadoSeleccionado";
-    }
-
-    // Descargar bytes del backend
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    if (response.statusCode != 200) {
-      _showError("Error al generar el reporte");
+  Future<void> _exportarExcel() async {
+    if (_resultados.isEmpty) {
+      _showError("No hay datos para exportar");
       return;
     }
 
-    // Guardar bytes en el dispositivo
-    final nombreArchivo = "reporte_asistencia_${desde}_$hasta.xlsx";
-    Directory dir;
-    if (Platform.isAndroid) {
-      dir = (await getExternalStorageDirectory())!;
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
+    try {
+      final token = await SecureStorage.getToken();
+      final desde = _formatFecha(_desde);
+      final hasta = _formatFecha(_hasta);
 
-    final path = "${dir.path}/$nombreArchivo";
-    final file = File(path);
-    await file.writeAsBytes(response.bodyBytes);
-    await OpenFilex.open(path);
+      String url =
+          "http://192.168.101.17:3000/asistencia/excel?desde=$desde&hasta=$hasta";
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Archivo guardado: $nombreArchivo"),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
-        ),
+      if (_usuarioSeleccionado != null) {
+        url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
+      }
+      if (_estadoSeleccionado != null) {
+        url += "&estado=$_estadoSeleccionado";
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {"Authorization": "Bearer $token"},
       );
+
+      if (response.statusCode != 200) {
+        _showError("Error al generar el reporte");
+        return;
+      }
+
+      final nombreArchivo = "reporte_asistencia_${desde}_$hasta.xlsx";
+      Directory dir;
+      if (Platform.isAndroid) {
+        dir = (await getExternalStorageDirectory())!;
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      final path = "${dir.path}/$nombreArchivo";
+      final file = File(path);
+      await file.writeAsBytes(response.bodyBytes);
+      await OpenFilex.open(path);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Archivo guardado: $nombreArchivo"),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      _showError("Error de conexión");
     }
-  } catch (e) {
-    _showError("Error de conexión");
   }
-}
 
   Color _colorEstado(String estado) {
     switch (estado) {
-      case 'PUNTUAL': return Colors.green;
-      case 'TARDE': return Colors.orange;
-      case 'SIN_SALIDA': return Colors.red;
-      default: return Colors.grey;
+      case 'PUNTUAL':
+        return Colors.green;
+      case 'TARDE':
+        return Colors.orange;
+      case 'SIN_SALIDA':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -220,7 +226,10 @@ Future<void> _exportarExcel() async {
               Text(
                 "$valor",
                 style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
               Text(
                 label,
@@ -246,14 +255,15 @@ Future<void> _exportarExcel() async {
       ),
       body: Column(
         children: [
-          // Filtros
           Container(
             color: Colors.indigo.shade50,
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
+                // Mostrar correo en vez de nombres/apellidos
                 DropdownButtonFormField<dynamic>(
                   initialValue: _usuarioSeleccionado,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: "Usuario (opcional)",
                     border: OutlineInputBorder(),
@@ -263,14 +273,18 @@ Future<void> _exportarExcel() async {
                   ),
                   items: [
                     const DropdownMenuItem(
-                        value: null, child: Text("Todos los usuarios")),
-                    ..._usuarios.map((u) => DropdownMenuItem(
-                          value: u,
-                          child: Text(
-                            "${u['nombres'] ?? ''} ${u['apellidos'] ?? ''} — ${u['correo']}",
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )),
+                      value: null,
+                      child: Text("Todos los usuarios"),
+                    ),
+                    ..._usuarios.map(
+                      (u) => DropdownMenuItem(
+                        value: u,
+                        child: Text(
+                          "${u['correo']} (${u['rol']})",
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _usuarioSeleccionado = v),
                 ),
@@ -344,20 +358,31 @@ Future<void> _exportarExcel() async {
             ),
           ),
 
-          // Resumen + botón exportar Excel
           if (_buscado && !_isLoading) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: Row(
                 children: [
-                  _resumenCard("Puntual", totales['PUNTUAL']!,
-                      Colors.green, Icons.check_circle),
+                  _resumenCard(
+                    "Puntual",
+                    totales['PUNTUAL']!,
+                    Colors.green,
+                    Icons.check_circle,
+                  ),
                   const SizedBox(width: 8),
-                  _resumenCard("Tarde", totales['TARDE']!,
-                      Colors.orange, Icons.schedule),
+                  _resumenCard(
+                    "Tarde",
+                    totales['TARDE']!,
+                    Colors.orange,
+                    Icons.schedule,
+                  ),
                   const SizedBox(width: 8),
-                  _resumenCard("Sin salida", totales['SIN_SALIDA']!,
-                      Colors.red, Icons.warning),
+                  _resumenCard(
+                    "Sin salida",
+                    totales['SIN_SALIDA']!,
+                    Colors.red,
+                    Icons.warning,
+                  ),
                 ],
               ),
             ),
@@ -369,13 +394,16 @@ Future<void> _exportarExcel() async {
                   Text(
                     "${_resultados.length} registros encontrados",
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.grey),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                   FilledButton.icon(
                     icon: const Icon(Icons.download, size: 16),
                     label: const Text("Excel"),
                     style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green),
+                      backgroundColor: Colors.green,
+                    ),
                     onPressed: _resultados.isEmpty ? null : _exportarExcel,
                   ),
                 ],
@@ -383,7 +411,6 @@ Future<void> _exportarExcel() async {
             ),
           ],
 
-          // Tabla
           if (_isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (_buscado && _resultados.isEmpty)
@@ -401,8 +428,9 @@ Future<void> _exportarExcel() async {
                 scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
                   child: DataTable(
-                    headingRowColor:
-                        WidgetStateProperty.all(Colors.indigo.shade50),
+                    headingRowColor: WidgetStateProperty.all(
+                      Colors.indigo.shade50,
+                    ),
                     columns: const [
                       DataColumn(label: Text("Nombre")),
                       DataColumn(label: Text("Fecha")),
@@ -411,34 +439,39 @@ Future<void> _exportarExcel() async {
                       DataColumn(label: Text("Estado")),
                     ],
                     rows: _resultados.map((item) {
-                      final fecha =
-                          item['fecha'].toString().substring(0, 10);
-                      return DataRow(cells: [
-                        DataCell(Text(
-                            "${item['nombres']} ${item['apellidos']}")),
-                        DataCell(Text(fecha)),
-                        DataCell(Text(item['hora_entrada'] ?? '--')),
-                        DataCell(Text(item['hora_salida'] ?? '--')),
-                        DataCell(
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _colorEstado(item['estado'])
-                                  .withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              item['estado'],
-                              style: TextStyle(
-                                color: _colorEstado(item['estado']),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                      final fecha = item['fecha'].toString().substring(0, 10);
+                      return DataRow(
+                        cells: [
+                          DataCell(
+                            Text("${item['nombres']} ${item['apellidos']}"),
+                          ),
+                          DataCell(Text(fecha)),
+                          DataCell(Text(item['hora_entrada'] ?? '--')),
+                          DataCell(Text(item['hora_salida'] ?? '--')),
+                          DataCell(
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _colorEstado(
+                                  item['estado'],
+                                ).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                item['estado'],
+                                style: TextStyle(
+                                  color: _colorEstado(item['estado']),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ]);
+                        ],
+                      );
                     }).toList(),
                   ),
                 ),

@@ -85,7 +85,13 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
         },
       );
       if (response.statusCode == 200) {
-        setState(() => _usuarios = jsonDecode(response.body));
+        final todos = jsonDecode(response.body) as List;
+        setState(() {
+          // Excluir admins
+          _usuarios = todos.where((u) =>
+            u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
+          ).toList();
+        });
       }
     } catch (e) {
       _showError("Error de conexión");

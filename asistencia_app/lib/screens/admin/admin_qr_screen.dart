@@ -213,7 +213,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         decoration: BoxDecoration(
-                          color: _colorContador.withOpacity(0.1),
+                          color: _colorContador.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: _colorContador),
                         ),
