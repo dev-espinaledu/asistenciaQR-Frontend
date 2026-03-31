@@ -125,6 +125,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     final correoController =
         TextEditingController(text: usuario?['correo'] ?? '');
     final passwordController = TextEditingController();
+    final nuevaPasswordController = TextEditingController();
     final nombresController =
         TextEditingController(text: usuario?['nombres'] ?? '');
     final apellidosController =
@@ -181,6 +182,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       v == null || v.isEmpty ? "Requerido" : null,
                 ),
                 const SizedBox(height: 8),
+
+                // Al crear: contraseña requerida
                 if (usuario == null)
                   TextFormField(
                     controller: passwordController,
@@ -189,6 +192,19 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     validator: (v) =>
                         v == null || v.isEmpty ? "Requerido" : null,
                   ),
+
+                // Al editar: nueva contraseña opcional
+                if (usuario != null) ...[
+                  TextFormField(
+                    controller: nuevaPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: "Nueva contraseña (opcional)",
+                      hintText: "Dejar vacío para no cambiar",
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: rolSeleccionado,
@@ -233,6 +249,10 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   id: usuario['id_usuario'],
                   correo: correoController.text,
                   rol: rolSeleccionado,
+                  // Pasar nueva contraseña si se ingresó
+                  nuevaPassword: nuevaPasswordController.text.isEmpty
+                      ? null
+                      : nuevaPasswordController.text,
                 );
               }
             },
@@ -293,9 +313,12 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     required int id,
     required String correo,
     required String rol,
+    String? nuevaPassword,
   }) async {
     try {
       final token = await SecureStorage.getToken();
+
+      // Actualizar datos básicos
       final response = await http.put(
         Uri.parse("http://192.168.101.17:3000/usuarios/$id"),
         headers: {
@@ -307,6 +330,23 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
           "rol": rol,
         }),
       );
+
+      // Actualizar contraseña si se ingresó
+      if (nuevaPassword != null && response.statusCode == 200) {
+        final passResponse = await http.put(
+          Uri.parse("http://192.168.101.17:3000/usuarios/$id/password"),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: jsonEncode({"password": nuevaPassword}),
+        );
+
+        if (passResponse.statusCode != 200) {
+          _showError("Error al actualizar contraseña");
+          return;
+        }
+      }
 
       if (response.statusCode == 200) {
         _showSuccess("Usuario actualizado correctamente");
@@ -458,8 +498,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                       final detalle = await _fetchDetalle(
                                           u['id_usuario']);
                                       if (detalle != null) {
-                                        _mostrarFormulario(
-                                            usuario: detalle);
+                                        _mostrarFormulario(usuario: detalle);
                                       }
                                     } else if (value == 'estado') {
                                       _cambiarEstado(u['id_usuario']);
