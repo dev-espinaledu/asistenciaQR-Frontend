@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/secure_storage.dart';
 import 'home_screen.dart';
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://192.168.101.17:3000/auth/login"),
+        Uri.parse("${AppConfig.baseUrl}/auth/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "correo": _emailController.text.trim(),

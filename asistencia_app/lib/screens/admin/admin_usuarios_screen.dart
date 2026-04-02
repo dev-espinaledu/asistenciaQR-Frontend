@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../services/secure_storage.dart';
 
 class AdminUsuariosScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -66,7 +67,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       await http.patch(
-        Uri.parse("http://192.168.101.17:3000/usuarios/$id/estado"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/$id/estado"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -104,7 +105,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.delete(
-        Uri.parse("http://192.168.101.17:3000/usuarios/$id"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -285,7 +286,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.post(
-        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -330,7 +331,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
       // Actualizar datos básicos
       final response = await http.put(
-        Uri.parse("http://192.168.101.17:3000/usuarios/$id"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -344,7 +345,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       // Actualizar contraseña si se ingresó
       if (nuevaPassword != null && response.statusCode == 200) {
         final passResponse = await http.put(
-          Uri.parse("http://192.168.101.17:3000/usuarios/$id/password"),
+          Uri.parse("${AppConfig.baseUrl}/usuarios/$id/password"),
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer $token",
@@ -531,7 +532,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios/$id"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",

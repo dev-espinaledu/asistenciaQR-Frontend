@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../services/secure_storage.dart';
 
 class ScannerScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.post(
-        Uri.parse("http://192.168.101.17:3000/asistencia/marcar"),
+        Uri.parse("${AppConfig.baseUrl}/asistencia/marcar"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",

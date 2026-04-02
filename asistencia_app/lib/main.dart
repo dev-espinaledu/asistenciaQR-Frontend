@@ -11,6 +11,7 @@ import 'screens/admin/admin_horarios_screen.dart';
 import 'screens/admin/admin_usuarios_screen.dart';
 import 'screens/admin/admin_reportes_screen.dart';
 import 'screens/profile_screen.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: ApiService.navigatorKey,
       title: 'Asistencia RCSFA',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

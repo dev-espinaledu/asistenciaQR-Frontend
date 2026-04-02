@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../services/secure_storage.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
@@ -29,7 +30,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/asistencia/resumen"),
+        Uri.parse("${AppConfig.baseUrl}/asistencia/resumen"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",

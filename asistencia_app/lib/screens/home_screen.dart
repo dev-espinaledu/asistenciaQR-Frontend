@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../services/auth_service.dart';
 import '../services/secure_storage.dart';
 import 'login_screen.dart';
@@ -42,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios/perfil"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/perfil"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",

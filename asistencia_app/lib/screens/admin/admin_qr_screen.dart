@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/secure_storage.dart';
 
@@ -43,7 +44,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
       final token = await SecureStorage.getToken();
 
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/qr/activo"),
+        Uri.parse("${AppConfig.baseUrl}/qr/activo"),
         headers: {
           "Authorization": "Bearer $token",
         },
@@ -80,7 +81,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
       final token = await SecureStorage.getToken();
 
       final response = await http.post(
-        Uri.parse("http://192.168.101.17:3000/qr/generar"),
+        Uri.parse("${AppConfig.baseUrl}/qr/generar"),
         headers: {
           "Authorization": "Bearer $token",
         },

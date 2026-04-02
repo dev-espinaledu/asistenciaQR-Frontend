@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../services/secure_storage.dart';
@@ -36,7 +37,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -70,7 +71,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       final hasta = _formatFecha(_hasta);
 
       String url =
-          "http://192.168.101.17:3000/asistencia/reportes?desde=$desde&hasta=$hasta";
+          "${AppConfig.baseUrl}/asistencia/reportes?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
         url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
@@ -148,7 +149,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       final hasta = _formatFecha(_hasta);
 
       String url =
-          "http://192.168.101.17:3000/asistencia/excel?desde=$desde&hasta=$hasta";
+          "${AppConfig.baseUrl}/asistencia/excel?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
         url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";

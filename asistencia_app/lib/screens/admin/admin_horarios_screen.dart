@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../services/secure_storage.dart';
 
 class AdminHorariosScreen extends StatefulWidget {
@@ -78,7 +79,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -103,7 +104,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios/$idUsuario/horarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/$idUsuario/horarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -146,7 +147,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
       final token = await SecureStorage.getToken();
       final response = await http.put(
         Uri.parse(
-            "http://192.168.101.17:3000/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios"),
+            "${AppConfig.baseUrl}/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -348,7 +349,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.post(
-        Uri.parse("http://192.168.101.17:3000/usuarios/horario-general"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios/horario-general"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",

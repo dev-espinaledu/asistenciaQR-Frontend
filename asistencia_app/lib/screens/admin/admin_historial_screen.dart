@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../services/secure_storage.dart';
 
 class AdminHistorialScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/asistencia/todos"),
+        Uri.parse("${AppConfig.baseUrl}/asistencia/todos"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -70,7 +71,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     try {
       final token = await SecureStorage.getToken();
       final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/usuarios"),
+        Uri.parse("${AppConfig.baseUrl}/usuarios"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -118,7 +119,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ✅ Usuario con SimpleDialog — muestra correo
+              // Usuario con SimpleDialog — muestra correo
               GestureDetector(
                 onTap: () async {
                   final seleccionado = await showDialog<dynamic>(
@@ -133,7 +134,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                         ..._usuariosParaEliminar.map((u) =>
                             SimpleDialogOption(
                               onPressed: () => Navigator.pop(context, u),
-                              child: Text(u['correo'] ?? ''), // ✅ correo
+                              child: Text(u['correo'] ?? ''),
                             )),
                       ],
                     ),
@@ -149,7 +150,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                   ),
                   child: Text(
                     _usuarioEliminar != null
-                        ? _usuarioEliminar['correo'] // ✅ correo
+                        ? _usuarioEliminar['correo']
                         : "Todos los usuarios",
                     style: TextStyle(
                       color: _usuarioEliminar != null
@@ -257,7 +258,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   Future<void> _eliminarRegistros() async {
     try {
       final token = await SecureStorage.getToken();
-      String url = "http://192.168.101.17:3000/asistencia/eliminar";
+      String url = "${AppConfig.baseUrl}/asistencia/eliminar";
       final params = <String>[];
 
       if (_usuarioEliminar != null) {
