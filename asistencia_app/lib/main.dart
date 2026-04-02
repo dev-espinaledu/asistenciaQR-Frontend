@@ -10,6 +10,7 @@ import 'screens/admin/admin_historial_screen.dart';
 import 'screens/admin/admin_horarios_screen.dart';
 import 'screens/admin/admin_usuarios_screen.dart';
 import 'screens/admin/admin_reportes_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/perfil': (context) => const ProfileScreen(),
         '/scanner': (context) => const ScannerScreen(),
         '/historial': (context) => const HistoryScreen(),
         '/admin': (context) => const AdminPanelScreen(),

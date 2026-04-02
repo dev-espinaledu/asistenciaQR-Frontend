@@ -189,8 +189,11 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     controller: passwordController,
                     obscureText: true,
                     decoration: const InputDecoration(labelText: "Contraseña"),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? "Requerido" : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return "Requerido";
+                      if (v.length < 6) return "Debe tener al menos 6 caracteres";
+                      return null;
+                    },
                   ),
 
                 // Al editar: nueva contraseña opcional
@@ -202,6 +205,13 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       labelText: "Nueva contraseña (opcional)",
                       hintText: "Dejar vacío para no cambiar",
                     ),
+                    // Validar solo si se ingresó algo
+                    validator: (v) {
+                      if (v != null && v.isNotEmpty && v.length < 6) {
+                        return "Debe tener al menos 6 caracteres";
+                      }
+                      return null;
+                    },
                   ),
                 ],
 
