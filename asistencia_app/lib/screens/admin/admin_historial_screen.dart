@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
-import '../../services/secure_storage.dart';
+import '../../services/api_service.dart';
 
 class AdminHistorialScreen extends StatefulWidget {
   const AdminHistorialScreen({super.key});
@@ -36,14 +34,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   Future<void> _fetchHistorial() async {
     setState(() => _isLoading = true);
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/asistencia/todos"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/asistencia/todos");
       if (response.statusCode == 200) {
         setState(() {
           _registros = jsonDecode(response.body);
@@ -69,17 +60,9 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
   Future<void> _cargarUsuariosParaEliminar() async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
-        // Excluir admins
         _usuariosParaEliminar = todos.where((u) =>
           u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
         ).toList();
@@ -119,7 +102,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Usuario con SimpleDialog — muestra correo
               GestureDetector(
                 onTap: () async {
                   final seleccionado = await showDialog<dynamic>(
@@ -163,7 +145,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
               const SizedBox(height: 12),
 
-              // Fecha
               InkWell(
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -257,13 +238,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
   Future<void> _eliminarRegistros() async {
     try {
-      final token = await SecureStorage.getToken();
-      String url = "${AppConfig.baseUrl}/asistencia/eliminar";
+      String path = "/asistencia/eliminar";
       final params = <String>[];
 
-      if (_usuarioEliminar != null) {
+      if (_usuarioEliminar != null)
         params.add("idUsuario=${_usuarioEliminar['id_usuario']}");
-      }
       if (_fechaEliminar != null) {
         final f = _fechaEliminar!;
         final fechaStr =
@@ -271,15 +250,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
         params.add("fecha=$fechaStr");
       }
 
-      if (params.isNotEmpty) url += "?${params.join('&')}";
+      if (params.isNotEmpty) path += "?${params.join('&')}";
 
-      final response = await http.delete(
-        Uri.parse(url),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      // ✅ ApiService.delete no soporta query params en el path
+      // usamos delete directo con la ruta completa
+      final response = await ApiService.delete(path);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -392,8 +367,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                                         child: Text(
                                           item['estado'],
                                           style: TextStyle(
-                                            color: _colorEstado(
-                                                item['estado']),
+                                            color: _colorEstado(item['estado']),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
