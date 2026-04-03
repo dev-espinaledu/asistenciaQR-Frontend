@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
-import '../../services/secure_storage.dart';
+import '../../services/api_service.dart';
 
 class AdminUsuariosScreen extends StatefulWidget {
   const AdminUsuariosScreen({super.key});
@@ -33,14 +31,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   Future<void> _fetchUsuarios() async {
     setState(() => _isLoading = true);
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
         setState(() {
           _usuarios = jsonDecode(response.body);
@@ -65,14 +56,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
   Future<void> _cambiarEstado(int id) async {
     try {
-      final token = await SecureStorage.getToken();
-      await http.patch(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/$id/estado"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      await ApiService.patch("/usuarios/$id/estado");
       _fetchUsuarios();
     } catch (e) {
       _showError("Error de conexión");
@@ -103,14 +87,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     if (confirm != true) return;
 
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.delete(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.delete("/usuarios/$id");
       if (response.statusCode == 200) {
         _showSuccess("Usuario eliminado correctamente");
         _fetchUsuarios();
@@ -184,7 +161,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Al crear: contraseña requerida
                 if (usuario == null)
                   TextFormField(
                     controller: passwordController,
@@ -197,7 +173,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     },
                   ),
 
-                // Al editar: nueva contraseña opcional
                 if (usuario != null) ...[
                   TextFormField(
                     controller: nuevaPasswordController,
@@ -206,7 +181,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       labelText: "Nueva contraseña (opcional)",
                       hintText: "Dejar vacío para no cambiar",
                     ),
-                    // Validar solo si se ingresó algo
                     validator: (v) {
                       if (v != null && v.isNotEmpty && v.length < 6) {
                         return "Debe tener al menos 6 caracteres";
@@ -260,7 +234,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   id: usuario['id_usuario'],
                   correo: correoController.text,
                   rol: rolSeleccionado,
-                  // Pasar nueva contraseña si se ingresó
                   nuevaPassword: nuevaPasswordController.text.isEmpty
                       ? null
                       : nuevaPasswordController.text,
@@ -284,14 +257,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     required String telefono,
   }) async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.post(
-        Uri.parse("${AppConfig.baseUrl}/usuarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService.post(
+        "/usuarios",
+        {
           "correo": correo,
           "password": password,
           "rol": rol,
@@ -300,12 +268,12 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
           "documento": documento,
           "telefono": telefono,
           "horarios": List.generate(5, (i) => {
-            "dia_semana": i + 1,
-            "hora_entrada": "07:00",
-            "hora_salida": "13:00",
-            "tolerancia_minutos": 10,
-          }),
-        }),
+                "dia_semana": i + 1,
+                "hora_entrada": "07:00",
+                "hora_salida": "13:00",
+                "tolerancia_minutos": 10,
+              }),
+        },
       );
 
       if (response.statusCode == 201) {
@@ -327,30 +295,18 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     String? nuevaPassword,
   }) async {
     try {
-      final token = await SecureStorage.getToken();
-
-      // Actualizar datos básicos
-      final response = await http.put(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService.put(
+        "/usuarios/$id",
+        {
           "correo": correo,
           "rol": rol,
-        }),
+        },
       );
 
-      // Actualizar contraseña si se ingresó
       if (nuevaPassword != null && response.statusCode == 200) {
-        final passResponse = await http.put(
-          Uri.parse("${AppConfig.baseUrl}/usuarios/$id/password"),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $token",
-          },
-          body: jsonEncode({"password": nuevaPassword}),
+        final passResponse = await ApiService.put(
+          "/usuarios/$id/password",
+          {"password": nuevaPassword},
         );
 
         if (passResponse.statusCode != 200) {
@@ -369,6 +325,18 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     } catch (e) {
       _showError("Error de conexión");
     }
+  }
+
+  Future<dynamic> _fetchDetalle(int id) async {
+    try {
+      final response = await ApiService.get("/usuarios/$id");
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      _showError("Error de conexión");
+    }
+    return null;
   }
 
   void _showError(String message) {
@@ -506,8 +474,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                   ],
                                   onSelected: (value) async {
                                     if (value == 'editar') {
-                                      final detalle = await _fetchDetalle(
-                                          u['id_usuario']);
+                                      final detalle =
+                                          await _fetchDetalle(u['id_usuario']);
                                       if (detalle != null) {
                                         _mostrarFormulario(usuario: detalle);
                                       }
@@ -526,24 +494,5 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
               ],
             ),
     );
-  }
-
-  Future<dynamic> _fetchDetalle(int id) async {
-    try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/$id"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-    } catch (e) {
-      _showError("Error de conexión");
-    }
-    return null;
   }
 }

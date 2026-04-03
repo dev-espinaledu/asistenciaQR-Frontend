@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import '../services/secure_storage.dart';
 import 'login_screen.dart';
 import 'scanner_screen.dart';
@@ -41,14 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _cargarPerfil() async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/perfil"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios/perfil");
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -63,14 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _cargarAsistenciaHoy() async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("http://192.168.101.17:3000/asistencia/historial"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/asistencia/historial");
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         final now = DateTime.now().toLocal();
@@ -79,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final registroHoy = data.where((r) {
           return r['fecha'].toString().substring(0, 10) == hoy;
         }).toList();
-
         setState(() {
           _asistenciaHoy = registroHoy.isNotEmpty ? registroHoy.first : null;
         });

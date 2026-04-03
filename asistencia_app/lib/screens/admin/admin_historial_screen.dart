@@ -35,6 +35,9 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await ApiService.get("/asistencia/todos");
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         setState(() {
           _registros = jsonDecode(response.body);
@@ -42,9 +45,13 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       _showError("Error de conexión");
     }
-    setState(() => _isLoading = false);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _filtrar() {
@@ -252,7 +259,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
       if (params.isNotEmpty) path += "?${params.join('&')}";
 
-      // ✅ ApiService.delete no soporta query params en el path
+      // Usamos query params directamente en el path (soportado por ApiService)
       // usamos delete directo con la ruta completa
       final response = await ApiService.delete(path);
 

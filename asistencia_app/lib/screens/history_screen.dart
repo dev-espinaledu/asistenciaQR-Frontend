@@ -1,10 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
-import '../services/secure_storage.dart';
-import '../services/auth_service.dart';
-import 'login_screen.dart';
+import '../services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -28,26 +24,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _fetchHistory() async {
     setState(() => _isLoading = true);
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/asistencia/historial"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-
-      if (response.statusCode == 401) {
-        await AuthService.logout();
-        if (!mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-        return;
-      }
-
+      final response = await ApiService.get("/asistencia/historial");
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
         setState(() {

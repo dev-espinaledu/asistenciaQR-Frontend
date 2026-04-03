@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
-import '../../services/secure_storage.dart';
 import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../login_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -28,14 +26,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   Future<void> _fetchResumen() async {
     setState(() => _isLoading = true);
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/asistencia/resumen"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/asistencia/resumen");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

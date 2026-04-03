@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
-import '../services/secure_storage.dart';
+import '../services/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,14 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchPerfil() async {
     setState(() => _isLoading = true);
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/perfil"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios/perfil");
       if (response.statusCode == 200) {
         setState(() => _perfil = jsonDecode(response.body));
       }
@@ -64,17 +55,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.put(
-        Uri.parse("http://192.168.101.17:3000/usuarios/mi-password"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService.put(
+        "/usuarios/mi-password",
+        {
           "passwordActual": _passwordActualController.text,
           "passwordNueva": _passwordNuevaController.text,
-        }),
+        },
       );
 
       final data = jsonDecode(response.body);

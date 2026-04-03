@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
+import '../../services/api_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../services/secure_storage.dart';
 
 class AdminQrScreen extends StatefulWidget {
   const AdminQrScreen({super.key});
@@ -41,14 +39,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final token = await SecureStorage.getToken();
-
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/qr/activo"),
-        headers: {
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/qr/activo");
 
       if (!mounted) return;
 
@@ -78,14 +69,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
   // Generar un nuevo QR (si no hay activo o por botón de refrescar)
   Future<void> _generarNuevoQR() async {
     try {
-      final token = await SecureStorage.getToken();
-
-      final response = await http.post(
-        Uri.parse("${AppConfig.baseUrl}/qr/generar"),
-        headers: {
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.post("/qr/generar", {});
 
       if (!mounted) return;
 

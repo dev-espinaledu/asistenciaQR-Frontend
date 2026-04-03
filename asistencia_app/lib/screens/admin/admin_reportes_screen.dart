@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
+import '../../services/api_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../services/secure_storage.dart';
 
 class AdminReportesScreen extends StatefulWidget {
   const AdminReportesScreen({super.key});
@@ -35,18 +33,11 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
 
   Future<void> _fetchUsuarios() async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios");
+
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
         setState(() {
-          // Excluir admins
           _usuarios = todos
               .where(
                 (u) => u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO',
@@ -66,27 +57,20 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     });
 
     try {
-      final token = await SecureStorage.getToken();
       final desde = _formatFecha(_desde);
       final hasta = _formatFecha(_hasta);
 
-      String url =
-          "${AppConfig.baseUrl}/asistencia/reportes?desde=$desde&hasta=$hasta";
+      String path =
+          "/asistencia/reportes?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
-        url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
+        path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
       }
       if (_estadoSeleccionado != null) {
-        url += "&estado=$_estadoSeleccionado";
+        path += "&estado=$_estadoSeleccionado";
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get(path);
 
       if (response.statusCode == 200) {
         setState(() => _resultados = jsonDecode(response.body));
@@ -144,24 +128,20 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     }
 
     try {
-      final token = await SecureStorage.getToken();
       final desde = _formatFecha(_desde);
       final hasta = _formatFecha(_hasta);
 
-      String url =
-          "${AppConfig.baseUrl}/asistencia/excel?desde=$desde&hasta=$hasta";
+      String path =
+          "/asistencia/excel?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
-        url += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
+        path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
       }
       if (_estadoSeleccionado != null) {
-        url += "&estado=$_estadoSeleccionado";
+        path += "&estado=$_estadoSeleccionado";
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {"Authorization": "Bearer $token"},
-      );
+      final response = await ApiService.get(path);
 
       if (response.statusCode != 200) {
         _showError("Error al generar el reporte");
@@ -169,6 +149,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       }
 
       final nombreArchivo = "reporte_asistencia_${desde}_$hasta.xlsx";
+
       Directory dir;
       if (Platform.isAndroid) {
         dir = (await getExternalStorageDirectory())!;
@@ -176,10 +157,11 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      final path = "${dir.path}/$nombreArchivo";
-      final file = File(path);
+      final pathFile = "${dir.path}/$nombreArchivo";
+      final file = File(pathFile);
       await file.writeAsBytes(response.bodyBytes);
-      await OpenFilex.open(path);
+
+      await OpenFilex.open(pathFile);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

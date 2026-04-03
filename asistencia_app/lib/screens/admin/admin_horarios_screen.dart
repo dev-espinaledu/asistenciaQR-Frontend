@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../config/app_config.dart';
-import '../../services/secure_storage.dart';
+import '../../services/api_service.dart';
 
 class AdminHorariosScreen extends StatefulWidget {
   const AdminHorariosScreen({super.key});
@@ -77,18 +75,10 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
       _usuarioSeleccionado = null;
     });
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
         setState(() {
-          // Excluir admins
           _usuarios = todos.where((u) =>
             u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
           ).toList();
@@ -102,14 +92,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
   Future<void> _fetchHorarios(int idUsuario) async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.get(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/$idUsuario/horarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await ApiService.get("/usuarios/$idUsuario/horarios");
       if (response.statusCode == 200) {
         final List<dynamic> horarios = jsonDecode(response.body);
         for (final h in horarios) {
@@ -132,39 +115,38 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     }
   }
 
-  Future<void> _guardarHorarios() async {
-    final List<Map<String, dynamic>> horarios = List.generate(7, (i) => {
+Future<void> _guardarHorarios() async {
+  final List<Map<String, dynamic>> horarios = List.generate(
+    7,
+    (i) => {
       "dia_semana": i + 1,
       "hora_entrada": _entradaControllers[i].text,
       "hora_salida": _salidaControllers[i].text,
-      "tolerancia_minutos":
-          int.tryParse(_toleranciaControllers[i].text) ?? 5,
+      "tolerancia_minutos": int.tryParse(_toleranciaControllers[i].text) ?? 5,
       "habilitado": _habilitados[i],
-    });
+    },
+  );
 
-    setState(() => _isSaving = true);
-    try {
-      final token = await SecureStorage.getToken();
-      final response = await http.put(
-        Uri.parse(
-            "${AppConfig.baseUrl}/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"horarios": horarios}),
-      );
-      if (response.statusCode == 200) {
-        _showSuccess("Horarios guardados correctamente");
-      } else {
-        final data = jsonDecode(response.body);
-        _showError(data["error"] ?? "Error al guardar");
-      }
-    } catch (e) {
-      _showError("Error de conexión");
+  setState(() => _isSaving = true);
+  try {
+    final response = await ApiService.put(
+      "/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios",
+      {
+        "horarios": horarios,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      _showSuccess("Horarios guardados correctamente");
+    } else {
+      final data = jsonDecode(response.body);
+      _showError(data["error"] ?? "Error al guardar");
     }
-    setState(() => _isSaving = false);
+  } catch (e) {
+    _showError("Error de conexión");
   }
+  setState(() => _isSaving = false);
+}
 
   Future<void> _seleccionarHora(TextEditingController controller) async {
     final parts = controller.text.split(':');
@@ -347,28 +329,20 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
   Future<void> _aplicarHorarioGeneral() async {
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.post(
-        Uri.parse("${AppConfig.baseUrl}/usuarios/horario-general"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await ApiService.post(
+        "/usuarios/horario-general",
+        {
           "diaSemana": _diaGeneralSeleccionado,
           "horaEntrada": _entradaGeneralController.text,
           "horaSalida": _salidaGeneralController.text,
-          "tolerancia":
-              int.tryParse(_toleranciaGeneralController.text) ?? 5,
-        }),
+          "tolerancia": int.tryParse(_toleranciaGeneralController.text) ?? 5,
+        },
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _showSuccess(
-            "Horario aplicado a ${data['actualizados']} usuario(s)");
+        _showSuccess("Horario aplicado a ${data['actualizados']} usuario(s)");
 
-        // Recargar horarios del usuario seleccionado si hay uno
         if (_usuarioSeleccionado != null) {
           _fetchHorarios(_usuarioSeleccionado['id_usuario']);
         }

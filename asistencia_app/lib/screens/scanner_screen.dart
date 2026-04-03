@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
-import '../services/secure_storage.dart';
+import '../services/api_service.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -22,14 +20,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     await _controller.stop();
 
     try {
-      final token = await SecureStorage.getToken();
-      final response = await http.post(
-        Uri.parse("${AppConfig.baseUrl}/asistencia/marcar"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"codigo_qr": qrValue}),
+      final response = await ApiService.post(
+        "/asistencia/marcar",
+        {"codigo_qr": qrValue},
       );
 
       final data = jsonDecode(response.body);
