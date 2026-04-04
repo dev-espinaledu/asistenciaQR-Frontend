@@ -18,6 +18,10 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   dynamic _usuarioEliminar;
   DateTime? _fechaEliminar;
 
+  // ✅ Filtros del historial
+  DateTime? _fechaFiltro;
+  String? _estadoFiltro;
+
   @override
   void initState() {
     super.initState();
@@ -35,9 +39,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await ApiService.get("/asistencia/todos");
-
       if (!mounted) return;
-
       if (response.statusCode == 200) {
         setState(() {
           _registros = jsonDecode(response.body);
@@ -48,10 +50,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       if (!mounted) return;
       _showError("Error de conexión");
     }
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   void _filtrar() {
@@ -60,9 +59,156 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       _filtrados = _registros.where((item) {
         final nombre =
             "${item['nombres']} ${item['apellidos']}".toLowerCase();
-        return nombre.contains(query);
+        final coincideNombre = nombre.contains(query);
+
+        final coincideFecha = _fechaFiltro == null ||
+            item['fecha'].toString().substring(0, 10) ==
+                "${_fechaFiltro!.year}-${_fechaFiltro!.month.toString().padLeft(2, '0')}-${_fechaFiltro!.day.toString().padLeft(2, '0')}";
+
+        final coincideEstado =
+            _estadoFiltro == null || item['estado'] == _estadoFiltro;
+
+        return coincideNombre && coincideFecha && coincideEstado;
       }).toList();
     });
+  }
+
+  void _mostrarFiltros() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Filtros",
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text("Limpiar"),
+                    onPressed: () {
+                      setState(() {
+                        _fechaFiltro = null;
+                        _estadoFiltro = null;
+                      });
+                      _filtrar();
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 8),
+
+              // ── Filtro por fecha ──
+              const Text("Fecha",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _fechaFiltro ?? DateTime.now(),
+                    firstDate: DateTime(2025),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() => _fechaFiltro = picked);
+                    setSheetState(() {});
+                    _filtrar();
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                    suffixIcon: _fechaFiltro != null
+                        ? IconButton(
+                            icon: const Icon(Icons.close, size: 16),
+                            onPressed: () {
+                              setState(() => _fechaFiltro = null);
+                              setSheetState(() {});
+                              _filtrar();
+                            },
+                          )
+                        : const Icon(Icons.calendar_today, size: 16),
+                  ),
+                  child: Text(
+                    _fechaFiltro != null
+                        ? "${_fechaFiltro!.year}-${_fechaFiltro!.month.toString().padLeft(2, '0')}-${_fechaFiltro!.day.toString().padLeft(2, '0')}"
+                        : "Todas las fechas",
+                    style: TextStyle(
+                      color: _fechaFiltro != null
+                          ? Colors.black
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ── Filtro por estado ──
+              const Text("Estado",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children:
+                    [null, 'PUNTUAL', 'TARDE', 'SIN_SALIDA'].map((estado) {
+                  final label = estado == null
+                      ? 'Todos'
+                      : estado == 'PUNTUAL'
+                          ? 'Puntual'
+                          : estado == 'TARDE'
+                              ? 'Tarde'
+                              : 'Sin salida';
+                  final color = estado == null
+                      ? Colors.indigo
+                      : estado == 'PUNTUAL'
+                          ? Colors.green
+                          : estado == 'TARDE'
+                              ? Colors.orange
+                              : Colors.red;
+                  final seleccionado = _estadoFiltro == estado;
+                  return ChoiceChip(
+                    label: Text(label),
+                    selected: seleccionado,
+                    selectedColor: color.withValues(alpha: 0.2),
+                    onSelected: (_) {
+                      setState(() => _estadoFiltro = estado);
+                      setSheetState(() {});
+                      _filtrar();
+                    },
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Aplicar"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _cargarUsuariosParaEliminar() async {
@@ -70,9 +216,10 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
-        _usuariosParaEliminar = todos.where((u) =>
-          u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
-        ).toList();
+        _usuariosParaEliminar = todos
+            .where((u) =>
+                u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
+            .toList();
       }
     } catch (e) {
       _showError("Error al cargar usuarios");
@@ -108,7 +255,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                 style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const SizedBox(height: 16),
-
               GestureDetector(
                 onTap: () async {
                   final seleccionado = await showDialog<dynamic>(
@@ -149,9 +295,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               InkWell(
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -183,7 +327,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                   ),
                 ),
               ),
-
               if (_fechaEliminar != null)
                 TextButton.icon(
                   icon: const Icon(Icons.close, size: 14),
@@ -248,8 +391,9 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       String path = "/asistencia/eliminar";
       final params = <String>[];
 
-      if (_usuarioEliminar != null)
+      if (_usuarioEliminar != null) {
         params.add("idUsuario=${_usuarioEliminar['id_usuario']}");
+      }
       if (_fechaEliminar != null) {
         final f = _fechaEliminar!;
         final fechaStr =
@@ -259,8 +403,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
       if (params.isNotEmpty) path += "?${params.join('&')}";
 
-      // Usamos query params directamente en el path (soportado por ApiService)
-      // usamos delete directo con la ruta completa
       final response = await ApiService.delete(path);
 
       if (response.statusCode == 200) {
@@ -319,17 +461,55 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // ── Buscador + botón filtros ──
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: "Buscar por nombre...",
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: "Buscar por nombre...",
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.filter_list),
+                            tooltip: "Filtros",
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.indigo.shade50,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: _mostrarFiltros,
+                          ),
+                          if (_fechaFiltro != null || _estadoFiltro != null)
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+
+                // ── Tabla ──
                 Expanded(
                   child: _filtrados.isEmpty
                       ? const Center(child: Text("No hay registros"))
