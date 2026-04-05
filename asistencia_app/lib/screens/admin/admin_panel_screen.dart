@@ -145,7 +145,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           : RefreshIndicator(
               onRefresh: _fetchResumen,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 children: [
                   const Text(
                     "Resumen del día",
@@ -155,7 +155,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   Row(
                     children: [
                       _statCard(
-                        titulo: "Usuarios",
+                        titulo: "Usuarios registrados",
                         valor: "$_totalUsuarios",
                         icono: Icons.people,
                         color: Colors.indigo,
@@ -169,7 +169,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                       ),
                       const SizedBox(width: 12),
                       _statCard(
-                        titulo: "Sin salida",
+                        titulo: "Sin salida hoy",
                         valor: "$_sinSalidaHoy",
                         icono: Icons.warning,
                         color: Colors.red,
@@ -216,12 +216,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     onTap: () =>
                         Navigator.pushNamed(context, "/admin/usuarios"),
                   ),
+                  const SizedBox(height: 12),
                   _menuButton(
                     titulo: "Reportes",
                     subtitulo: "Filtra asistencias por usuario, fecha y estado",
                     icono: Icons.bar_chart,
                     color: Colors.teal,
-                    onTap: () => Navigator.pushNamed(context, "/admin/reportes"),
+                    onTap: () =>
+                        Navigator.pushNamed(context, "/admin/reportes"),
                   ),
                 ],
               ),
