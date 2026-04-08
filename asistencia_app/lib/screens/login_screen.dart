@@ -146,22 +146,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.qr_code_2,
-                        size: 50,
-                        color: Colors.white,
-                      ),
+                    Image.asset(
+                      'assets/images/logo_rcsfa.png',
+                      width: 110,
+                      height: 110,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      isAntiAlias: true,
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -198,219 +189,212 @@ class _LoginScreenState extends State<LoginScreen> {
                       topRight: Radius.circular(32),
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      // ── Scroll del formulario ──
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(28, 36, 28, 24),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Iniciar sesión",
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A237E),
-                                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 36, 28, 24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Iniciar sesión",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A237E),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Ingresa tus credenciales para continuar",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // ── Campo correo ──
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: "Correo electrónico",
+                              hintText: "usuario@realcsfa.edu.co",
+                              prefixIcon: const Icon(
+                                Icons.email_outlined,
+                                color: Color(0xFF3949AB),
+                              ),
+                              // Botón para limpiar el correo
+                              suffixIcon: _emailController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close,
+                                          color: Colors.grey, size: 18),
+                                      onPressed: () {
+                                        _emailController.clear();
+                                        setState(() {});
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF3949AB), width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            onChanged: (_) => setState(() {}),
+                            validator: (v) => v == null || v.isEmpty
+                                ? "Ingrese su correo"
+                                : null,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ── Campo contraseña ──
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: "Contraseña",
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: Color(0xFF3949AB),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: Colors.grey,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Ingresa tus credenciales para continuar",
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF3949AB), width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            validator: (v) => v == null || v.isEmpty
+                                ? "Ingrese su contraseña"
+                                : null,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Checkbox Recordarme
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _recordarme,
+                                  activeColor: const Color(0xFF3949AB),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  onChanged: (v) =>
+                                      setState(() => _recordarme = v ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _recordarme = !_recordarme),
+                                child: Text(
+                                  "Recordarme",
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.grey.shade500,
+                                    color: Colors.grey.shade600,
                                   ),
                                 ),
-                                const SizedBox(height: 28),
+                              ),
+                            ],
+                          ),
 
-                                // ── Campo correo ──
-                                TextFormField(
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  decoration: InputDecoration(
-                                    labelText: "Correo electrónico",
-                                    hintText: "usuario@realcsfa.edu.co",
-                                    prefixIcon: const Icon(
-                                      Icons.email_outlined,
-                                      color: Color(0xFF3949AB),
-                                    ),
-                                    suffixIcon: _emailController.text.isNotEmpty
-                                        ? IconButton(
-                                            icon: const Icon(Icons.close,
-                                                color: Colors.grey, size: 18),
-                                            onPressed: () {
-                                              _emailController.clear();
-                                              setState(() {});
-                                            },
-                                          )
-                                        : null,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide:
-                                          BorderSide(color: Colors.grey.shade300),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: const BorderSide(
-                                          color: Color(0xFF3949AB), width: 2),
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                  validator: (v) => v == null || v.isNotEmpty
-                                      ? null
-                                      : "Ingrese su correo",
+                          const SizedBox(height: 24),
+
+                          // ── Botón login ──
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF3949AB),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-
-                                const SizedBox(height: 16),
-
-                                // ── Campo contraseña ──
-                                TextFormField(
-                                  controller: _passwordController,
-                                  obscureText: _obscurePassword,
-                                  decoration: InputDecoration(
-                                    labelText: "Contraseña",
-                                    prefixIcon: const Icon(
-                                      Icons.lock_outline,
-                                      color: Color(0xFF3949AB),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        _obscurePassword
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined,
-                                        color: Colors.grey,
-                                      ),
-                                      onPressed: () => setState(
-                                        () => _obscurePassword = !_obscurePassword,
-                                      ),
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide:
-                                          BorderSide(color: Colors.grey.shade300),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: const BorderSide(
-                                          color: Color(0xFF3949AB), width: 2),
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                  ),
-                                  validator: (v) => v == null || v.isEmpty
-                                      ? "Ingrese su contraseña"
-                                      : null,
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // ── Checkbox Recordarme ──
-                                Row(
-                                  children: [
-                                    SizedBox(
+                              ),
+                              onPressed: _isLoading ? null : _login,
+                              child: _isLoading
+                                  ? const SizedBox(
                                       width: 24,
                                       height: 24,
-                                      child: Checkbox(
-                                        value: _recordarme,
-                                        activeColor: const Color(0xFF3949AB),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        onChanged: (v) =>
-                                            setState(() => _recordarme = v ?? false),
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Iniciar sesión",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _recordarme = !_recordarme),
-                                      child: Text(
-                                        "Recordarme",
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+                          // ── Pie ──
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "Fundación Real Colegio San Francisco de Asís",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade400,
+                                  ),
                                 ),
-
-                                const SizedBox(height: 24),
-
-                                // ── Botón login ──
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 52,
-                                  child: FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: const Color(0xFF3949AB),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                    onPressed: _isLoading ? null : _login,
-                                    child: _isLoading
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 2.5,
-                                            ),
-                                          )
-                                        : const Text(
-                                            "Iniciar sesión",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
+                                const SizedBox(height: 9),
+                                Text(
+                                  "Creado con ❤️ por Edu Espinal",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey.shade400,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-
-                      // ── Footer fijo ──
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Fundación Real Colegio San Francisco de Asís",
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                            const SizedBox(height: 9),
-                            Text(
-                              "Creado con ❤️ por Edu Espinal",
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
