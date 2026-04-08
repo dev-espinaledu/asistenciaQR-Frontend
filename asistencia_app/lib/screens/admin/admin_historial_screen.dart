@@ -18,7 +18,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   dynamic _usuarioEliminar;
   DateTime? _fechaEliminar;
 
-  // ✅ Filtros del historial
+  // Filtros del historial
   DateTime? _fechaFiltro;
   String? _estadoFiltro;
 

@@ -178,35 +178,51 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                     // SOLO DEPENDE DE QUE EXISTA CÓDIGO
                     if (_codigo != null) ...[
                       const Text(
-                        "QR Activo",
+                        "Escanea para registrar asistencia",
                         style: TextStyle(
-                          fontSize: 20,
+                          color: Colors.black,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                      QrImageView(
-                        data: _codigo!,
-                        version: QrVersions.auto,
-                        size: 260,
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: QrImageView(
+                          data: _codigo!,
+                          version: QrVersions.auto,
+                          size: 260,
+                        ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         decoration: BoxDecoration(
-                          color: _colorContador.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _colorContador),
+                          color: _colorContador.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: _colorContador.withValues(alpha: 0.5)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.timer, color: _colorContador),
-                            const SizedBox(width: 8),
+                            Icon(Icons.timer, color: _colorContador, size: 22),
+                            const SizedBox(width: 10),
                             Text(
                               "Expira en $_tiempoFormateado",
                               style: TextStyle(
@@ -219,13 +235,11 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                         ),
                       ),
                     ] else ...[
-                      const Icon(Icons.qr_code,
-                          size: 120, color: Colors.grey),
+                      const Icon(Icons.qr_code, size: 120, color: Colors.grey),
                       const SizedBox(height: 16),
                       const Text(
                         "No hay QR activo",
-                        style: TextStyle(
-                            color: Colors.grey, fontSize: 16),
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     ],
                   ],

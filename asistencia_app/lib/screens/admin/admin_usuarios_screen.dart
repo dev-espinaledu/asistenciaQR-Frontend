@@ -375,6 +375,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       value: 'ADMIN',
                       child: Text("Administrador"),
                     ),
+                    DropdownMenuItem(value: 'PORTERO', child: Text("Portero")),
                   ],
                   onChanged: (v) => rolSeleccionado = v!,
                 ),

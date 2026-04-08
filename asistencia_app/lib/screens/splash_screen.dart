@@ -18,19 +18,29 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkAuth();
   }
 
-  Future<void> _checkAuth() async {
+    Future<void> _checkAuth() async {
     final loggedIn = await AuthService.isLoggedIn();
     if (!mounted) return;
 
     if (loggedIn) {
       final rol = await SecureStorage.getRol();
-      if (!mounted) return; // verificar antes de usar context
+      if (!mounted) return;
+
       if (rol == "ADMIN") {
         Navigator.pushReplacementNamed(context, "/admin");
-      } else {
+      } else if (rol == "PORTERO") {
+        Navigator.pushReplacementNamed(context, "/portero");
+      } else if (rol == "DOCENTE" || rol == "ADMINISTRATIVO") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        // Si el rol es null o desconocido, ir al login
+        await AuthService.logout();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       }
     } else {

@@ -2,21 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+class PorteroPerfilScreen extends StatefulWidget {
+  const PorteroPerfilScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<PorteroPerfilScreen> createState() => _PorteroPerfilScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
   Map<String, dynamic>? _perfil;
-  Map<String, dynamic>? _estadisticas;
   bool _isLoading = true;
   bool _isSaving = false;
-  bool _mostrarCambioPassword = false;
-  int _mesSeleccionado = DateTime.now().month;
-  int _anioSeleccionado = DateTime.now().year;
 
   final _formKey = GlobalKey<FormState>();
   final _passwordActualController = TextEditingController();
@@ -26,12 +22,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _obscureActual = true;
   bool _obscureNueva = true;
   bool _obscureConfirmar = true;
+  bool _mostrarCambioPassword = false;
 
   @override
   void initState() {
     super.initState();
     _fetchPerfil();
-    _fetchEstadisticas();
   }
 
   @override
@@ -53,19 +49,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _showError("Error al cargar perfil");
     }
     setState(() => _isLoading = false);
-  }
-
-  Future<void> _fetchEstadisticas() async {
-    try {
-      final response = await ApiService.get(
-        "/asistencia/estadisticas?mes=$_mesSeleccionado&anio=$_anioSeleccionado",
-      );
-      if (response.statusCode == 200) {
-        setState(() => _estadisticas = jsonDecode(response.body));
-      }
-    } catch (e) {
-      // silencioso
-    }
   }
 
   Future<void> _cambiarPassword() async {
@@ -99,110 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = false);
   }
 
-  String _nombreMes(int mes) {
-    const meses = [
-      '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    return meses[mes];
-  }
-
-  void _mostrarSelectorMes() {
-    int mesTemp = _mesSeleccionado;
-    int anioTemp = _anioSeleccionado;
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Seleccionar período",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Divider(),
-              const SizedBox(height: 8),
-
-              const Text("Año",
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () => setSheetState(() => anioTemp--),
-                  ),
-                  Text(
-                    "$anioTemp",
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: anioTemp < DateTime.now().year
-                        ? () => setSheetState(() => anioTemp++)
-                        : null,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              const Text("Mes",
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(12, (i) {
-                  final m = i + 1;
-                  final seleccionado = mesTemp == m;
-                  final esFuturo = anioTemp == DateTime.now().year &&
-                      m > DateTime.now().month;
-                  return ChoiceChip(
-                    label: Text(_nombreMes(m).substring(0, 3)),
-                    selected: seleccionado,
-                    selectedColor: Colors.indigo.shade100,
-                    disabledColor: Colors.grey.shade100,
-                    onSelected: esFuturo
-                        ? null
-                        : (_) => setSheetState(() => mesTemp = m),
-                  );
-                }),
-              ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    setState(() {
-                      _mesSeleccionado = mesTemp;
-                      _anioSeleccionado = anioTemp;
-                      _estadisticas = null;
-                    });
-                    _fetchEstadisticas();
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Aplicar"),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -215,38 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _statChip(String label, int valor, Color color, IconData icono) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icono, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              "$valor",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: color,
-              ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -255,15 +102,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text("Mi perfil"),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _fetchPerfil();
-              _fetchEstadisticas();
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -334,128 +172,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── Tarjeta estadísticas ──
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.bar_chart, color: Colors.indigo),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Estadísticas",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton.icon(
-                              icon: const Icon(Icons.calendar_month, size: 16),
-                              label: Text(
-                                "${_nombreMes(_mesSeleccionado)} $_anioSeleccionado",
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              onPressed: _mostrarSelectorMes,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        if (_estadisticas == null)
-                          const Center(child: CircularProgressIndicator())
-                        else ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Total de días asistidos"),
-                              Text(
-                                "${_estadisticas!['total'] ?? 0}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Puntualidad"),
-                              Text(
-                                "${_estadisticas!['porcentajePuntualidad'] ?? 0}%",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.indigo,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: ((_estadisticas![
-                                              'porcentajePuntualidad'] ??
-                                          0) as int) /
-                                  100,
-                              minHeight: 10,
-                              backgroundColor: Colors.grey.shade200,
-                              valueColor:
-                                  const AlwaysStoppedAnimation<Color>(
-                                      Colors.indigo),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _statChip(
-                                "Puntual",
-                                (_estadisticas!['puntual'] ?? 0) as int,
-                                Colors.green,
-                                Icons.check_circle,
-                              ),
-                              const SizedBox(width: 8),
-                              _statChip(
-                                "Tarde",
-                                (_estadisticas!['tarde'] ?? 0) as int,
-                                Colors.orange,
-                                Icons.schedule,
-                              ),
-                              const SizedBox(width: 8),
-                              _statChip(
-                                "Sin salida",
-                                (_estadisticas!['sinSalida'] ?? 0) as int,
-                                Colors.red,
-                                Icons.warning,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // ── Tarjeta cambiar contraseña ──
+                // ── Cambiar contraseña expandible ──
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     children: [
-                      // ✅ Botón que expande/colapsa
                       ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.indigo.shade50,
@@ -477,8 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => setState(() =>
                             _mostrarCambioPassword = !_mostrarCambioPassword),
                       ),
-
-                      // ✅ Formulario expandible
                       if (_mostrarCambioPassword) ...[
                         const Divider(height: 1),
                         Padding(
@@ -487,7 +207,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             key: _formKey,
                             child: Column(
                               children: [
-                                // Contraseña actual
                                 TextFormField(
                                   controller: _passwordActualController,
                                   obscureText: _obscureActual,
@@ -496,9 +215,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     prefixIcon:
                                         const Icon(Icons.lock_outline),
                                     border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
                                     suffixIcon: IconButton(
                                       icon: Icon(_obscureActual
                                           ? Icons.visibility_outlined
@@ -508,16 +226,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) {
+                                    if (v == null || v.isEmpty)
                                       return "Requerido";
-                                    }
                                     return null;
                                   },
                                 ),
-
                                 const SizedBox(height: 12),
-
-                                // Nueva contraseña
                                 TextFormField(
                                   controller: _passwordNuevaController,
                                   obscureText: _obscureNueva,
@@ -526,9 +240,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     prefixIcon:
                                         const Icon(Icons.lock_reset),
                                     border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
                                     suffixIcon: IconButton(
                                       icon: Icon(_obscureNueva
                                           ? Icons.visibility_outlined
@@ -538,19 +251,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) {
+                                    if (v == null || v.isEmpty)
                                       return "Requerido";
-                                    }
-                                    if (v.length < 6) {
+                                    if (v.length < 6)
                                       return "Debe tener al menos 6 caracteres";
-                                    }
                                     return null;
                                   },
                                 ),
-
                                 const SizedBox(height: 12),
-
-                                // Confirmar contraseña
                                 TextFormField(
                                   controller: _passwordConfirmarController,
                                   obscureText: _obscureConfirmar,
@@ -559,9 +267,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     prefixIcon:
                                         const Icon(Icons.lock_reset),
                                     border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
                                     suffixIcon: IconButton(
                                       icon: Icon(_obscureConfirmar
                                           ? Icons.visibility_outlined
@@ -572,18 +279,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) {
+                                    if (v == null || v.isEmpty)
                                       return "Requerido";
-                                    }
-                                    if (v != _passwordNuevaController.text) {
+                                    if (v != _passwordNuevaController.text)
                                       return "Las contraseñas no coinciden";
-                                    }
                                     return null;
                                   },
                                 ),
-
                                 const SizedBox(height: 20),
-
                                 SizedBox(
                                   width: double.infinity,
                                   height: 50,
@@ -611,8 +314,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
               ],
             ),
     );

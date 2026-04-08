@@ -45,6 +45,24 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   }
 
   Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Cerrar sesión"),
+        content: const Text("¿Estás seguro de que deseas cerrar sesión?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Cerrar sesión"),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     await AuthService.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -215,6 +233,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     color: Colors.purple,
                     onTap: () =>
                         Navigator.pushNamed(context, "/admin/usuarios"),
+                  ),
+                  const SizedBox(height: 12),
+                  _menuButton(
+                    titulo: "Estadísticas",
+                    subtitulo: "Consulta estadísticas por usuario y período",
+                    icono: Icons.insights,
+                    color: Colors.deepPurple,
+                    onTap: () => Navigator.pushNamed(context, "/admin/estadisticas"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
