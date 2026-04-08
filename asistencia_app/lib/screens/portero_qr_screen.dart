@@ -109,12 +109,6 @@ class _PorteroQrScreenState extends State<PorteroQrScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         title: const Text("QR de Asistencia"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchQRActivo,
-          ),
-        ],
       ),
       body: SafeArea(
         child: Center(
