@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/secure_storage.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -21,6 +22,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
   DateTime _hasta = DateTime.now();
   bool _isLoading = false;
   bool _buscado = false;
+  String _rol = '';
 
   final List<String?> _estados = [null, 'PUNTUAL', 'TARDE', 'AUSENTE'];
   final List<String> _estadosLabel = ['Todos', 'Puntual', 'Tarde', 'Ausente'];
@@ -28,20 +30,24 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarRol();
     _fetchUsuarios();
+  }
+
+  Future<void> _cargarRol() async {
+    final rol = await SecureStorage.getRol();
+    setState(() => _rol = rol ?? '');
   }
 
   Future<void> _fetchUsuarios() async {
     try {
       final response = await ApiService.get("/usuarios");
-
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
         setState(() {
           _usuarios = todos
-              .where(
-                (u) => u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO',
-              )
+              .where((u) =>
+                  u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
               .toList();
         });
       }
@@ -60,8 +66,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       final desde = _formatFecha(_desde);
       final hasta = _formatFecha(_hasta);
 
-      String path =
-          "/asistencia/reportes?desde=$desde&hasta=$hasta";
+      String path = "/asistencia/reportes?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
         path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
@@ -110,12 +115,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     final map = {'PUNTUAL': 0, 'TARDE': 0, 'SIN_SALIDA': 0, 'AUSENTE': 0};
     for (final r in _resultados) {
       final estado = r['estado'] as String;
-      final sinSalida = r['hora_salida'] == null && estado != 'AUSENTE';
       if (map.containsKey(estado)) {
         map[estado] = map[estado]! + 1;
-      }
-      if (sinSalida && estado == 'SIN_SALIDA') {
-        map['SIN_SALIDA'] = map['SIN_SALIDA']! + 1;
       }
     }
     return map;
@@ -131,8 +132,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       final desde = _formatFecha(_desde);
       final hasta = _formatFecha(_hasta);
 
-      String path =
-          "/asistencia/excel?desde=$desde&hasta=$hasta";
+      String path = "/asistencia/excel?desde=$desde&hasta=$hasta";
 
       if (_usuarioSeleccionado != null) {
         path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
@@ -160,7 +160,6 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       final pathFile = "${dir.path}/$nombreArchivo";
       final file = File(pathFile);
       await file.writeAsBytes(response.bodyBytes);
-
       await OpenFilex.open(pathFile);
 
       if (mounted) {
@@ -179,16 +178,11 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
 
   Color _colorEstado(String estado) {
     switch (estado) {
-      case 'PUNTUAL':
-        return Colors.green;
-      case 'TARDE':
-        return Colors.orange;
-      case 'SIN_SALIDA':
-        return Colors.red;
-      case 'AUSENTE':
-        return Colors.purple;
-      default:
-        return Colors.grey;
+      case 'PUNTUAL': return Colors.green;
+      case 'TARDE': return Colors.orange;
+      case 'SIN_SALIDA': return Colors.red;
+      case 'AUSENTE': return Colors.purple;
+      default: return Colors.grey;
     }
   }
 
@@ -245,9 +239,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                // Mostrar correo en vez de nombres/apellidos
                 DropdownButtonFormField<dynamic>(
-                  initialValue: _usuarioSeleccionado,
+                  value: _usuarioSeleccionado,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: "Usuario (opcional)",
@@ -258,18 +251,14 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                   ),
                   items: [
                     const DropdownMenuItem(
-                      value: null,
-                      child: Text("Todos los usuarios"),
-                    ),
-                    ..._usuarios.map(
-                      (u) => DropdownMenuItem(
-                        value: u,
-                        child: Text(
-                          "${u['correo']} (${u['rol']})",
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
+                        value: null, child: Text("Todos los usuarios")),
+                    ..._usuarios.map((u) => DropdownMenuItem(
+                          value: u,
+                          child: Text(
+                            "${u['correo']} (${u['rol']})",
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )),
                   ],
                   onChanged: (v) => setState(() => _usuarioSeleccionado = v),
                 ),
@@ -286,7 +275,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                             isDense: true,
                             filled: true,
                             fillColor: Colors.white,
-                            suffixIcon: Icon(Icons.calendar_today, size: 16),
+                            suffixIcon:
+                                Icon(Icons.calendar_today, size: 16),
                           ),
                           child: Text(_formatFecha(_desde)),
                         ),
@@ -303,7 +293,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                             isDense: true,
                             filled: true,
                             fillColor: Colors.white,
-                            suffixIcon: Icon(Icons.calendar_today, size: 16),
+                            suffixIcon:
+                                Icon(Icons.calendar_today, size: 16),
                           ),
                           child: Text(_formatFecha(_hasta)),
                         ),
@@ -313,7 +304,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String?>(
-                  initialValue: _estadoSeleccionado,
+                  value: _estadoSeleccionado,
                   decoration: const InputDecoration(
                     labelText: "Estado",
                     border: OutlineInputBorder(),
@@ -328,7 +319,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                       child: Text(_estadosLabel[i]),
                     ),
                   ),
-                  onChanged: (v) => setState(() => _estadoSeleccionado = v),
+                  onChanged: (v) =>
+                      setState(() => _estadoSeleccionado = v),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -348,63 +340,49 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: Row(
                 children: [
-                  _resumenCard(
-                    "Puntual",
-                    totales['PUNTUAL']!,
-                    Colors.green,
-                    Icons.check_circle,
-                  ),
+                  _resumenCard("Puntual", totales['PUNTUAL']!,
+                      Colors.green, Icons.check_circle),
                   const SizedBox(width: 8),
-                  _resumenCard(
-                    "Tarde",
-                    totales['TARDE']!,
-                    Colors.orange,
-                    Icons.schedule,
-                  ),
+                  _resumenCard("Tarde", totales['TARDE']!,
+                      Colors.orange, Icons.schedule),
                   const SizedBox(width: 8),
-                  _resumenCard(
-                    "Sin salida",
-                    totales['SIN_SALIDA']!,
-                    Colors.red,
-                    Icons.warning,
-                  ),
+                  _resumenCard("Sin salida", totales['SIN_SALIDA']!,
+                      Colors.red, Icons.warning),
                   const SizedBox(width: 8),
-                  _resumenCard(
-                    "Ausente",
-                    totales['AUSENTE']!,
-                    Colors.purple,
-                    Icons.person_off,
-                  ),
+                  _resumenCard("Ausente", totales['AUSENTE']!,
+                      Colors.purple, Icons.person_off),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "${_resultados.length} registros encontrados",
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
+                        fontWeight: FontWeight.bold, color: Colors.grey),
                   ),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.download, size: 16),
-                    label: const Text("Excel"),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green,
+                  // ✅ Solo ADMIN puede exportar Excel
+                  if (_rol == 'ADMIN')
+                    FilledButton.icon(
+                      icon: const Icon(Icons.download, size: 16),
+                      label: const Text("Excel"),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green),
+                      onPressed:
+                          _resultados.isEmpty ? null : _exportarExcel,
                     ),
-                    onPressed: _resultados.isEmpty ? null : _exportarExcel,
-                  ),
                 ],
               ),
             ),
           ],
 
           if (_isLoading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
+            const Expanded(
+                child: Center(child: CircularProgressIndicator()))
           else if (_buscado && _resultados.isEmpty)
             const Expanded(
               child: Center(
@@ -421,8 +399,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                 child: SingleChildScrollView(
                   child: DataTable(
                     headingRowColor: WidgetStateProperty.all(
-                      Colors.indigo.shade50,
-                    ),
+                        Colors.indigo.shade50),
                     columns: const [
                       DataColumn(label: Text("Nombre")),
                       DataColumn(label: Text("Fecha")),
@@ -431,39 +408,34 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                       DataColumn(label: Text("Estado")),
                     ],
                     rows: _resultados.map((item) {
-                      final fecha = item['fecha'].toString().substring(0, 10);
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Text("${item['nombres']} ${item['apellidos']}"),
-                          ),
-                          DataCell(Text(fecha)),
-                          DataCell(Text(item['hora_entrada'] ?? '--')),
-                          DataCell(Text(item['hora_salida'] ?? '--')),
-                          DataCell(
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _colorEstado(
-                                  item['estado'],
-                                ).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                item['estado'],
-                                style: TextStyle(
-                                  color: _colorEstado(item['estado']),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                      final fecha =
+                          item['fecha'].toString().substring(0, 10);
+                      return DataRow(cells: [
+                        DataCell(Text(
+                            "${item['nombres']} ${item['apellidos']}")),
+                        DataCell(Text(fecha)),
+                        DataCell(Text(item['hora_entrada'] ?? '--')),
+                        DataCell(Text(item['hora_salida'] ?? '--')),
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _colorEstado(item['estado'])
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              item['estado'],
+                              style: TextStyle(
+                                color: _colorEstado(item['estado']),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
                               ),
                             ),
                           ),
-                        ],
-                      );
+                        ),
+                      ]);
                     }).toList(),
                   ),
                 ),

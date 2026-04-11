@@ -338,7 +338,7 @@ class _AdminEstadisticasScreenState extends State<AdminEstadisticasScreen> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text("Total de días asistidos"),
+                                      const Text("Días asistidos"),
                                       Text(
                                         "${_estadisticas!['total'] ?? 0}",
                                         style: const TextStyle(
@@ -405,6 +405,13 @@ class _AdminEstadisticasScreenState extends State<AdminEstadisticasScreen> {
                                             as int,
                                         Colors.red,
                                         Icons.warning,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _statChip(
+                                        "Ausente",
+                                        (_estadisticas!['ausente'] ?? 0) as int,
+                                        Colors.purple,
+                                        Icons.person_off,
                                       ),
                                     ],
                                   ),

@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final rol = await SecureStorage.getRol();
       if (!mounted) return;
 
-      if (rol == "ADMIN") {
+      if (rol == "ADMIN" || rol == "SUB_ADMIN") {
         Navigator.pushReplacementNamed(context, "/admin");
       } else if (rol == "PORTERO") {
         Navigator.pushReplacementNamed(context, "/portero");
@@ -36,7 +36,6 @@ class _SplashScreenState extends State<SplashScreen> {
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
-        // Si el rol es null o desconocido, ir al login
         await AuthService.logout();
         Navigator.pushReplacement(
           context,

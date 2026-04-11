@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/secure_storage.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class AdminQrScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
   bool _isLoading = false;
   bool _fetchingQR = false;
   double _duracionMinutos = 1.0;
+  String _rol = '';
 
   Timer? _countdownTimer;
   Duration _tiempoRestante = Duration.zero;
@@ -24,8 +26,14 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarRol();
     _fetchConfiguracion();
     _fetchQRActivo();
+  }
+
+  Future<void> _cargarRol() async {
+    final rol = await SecureStorage.getRol();
+    setState(() => _rol = rol ?? '');
   }
 
   @override
@@ -65,7 +73,12 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
         });
         _iniciarContador();
       } else if (response.statusCode == 404) {
-        await _generarNuevoQR();
+        // Solo ADMIN puede generar, SUB_ADMIN solo espera
+        if (_rol == 'ADMIN') {
+          await _generarNuevoQR();
+        } else {
+          setState(() => _isLoading = false);
+        }
       } else {
         setState(() => _isLoading = false);
         _showError("Error inesperado");
@@ -168,7 +181,6 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const Divider(height: 24),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -193,9 +205,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                   onChanged: (v) =>
                       setSheetState(() => minutosTemp = v.roundToDouble()),
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -207,6 +217,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                       if (response.statusCode == 200) {
                         setState(() => _duracionMinutos = minutosTemp);
                         if (!mounted) return;
+                        // ignore: use_build_context_synchronously
                         Navigator.pop(context);
                         _showSuccess("Configuración guardada correctamente");
                       } else {
@@ -244,15 +255,19 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: "Configurar duración",
-            onPressed: _mostrarConfiguracion,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _generarNuevoQR,
-          ),
+          // Solo ADMIN puede configurar y generar
+          if (_rol == 'ADMIN') ...[
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: "Configurar duración",
+              onPressed: _mostrarConfiguracion,
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: "Generar nuevo QR",
+              onPressed: _generarNuevoQR,
+            ),
+          ],
         ],
       ),
       body: _isLoading
@@ -323,9 +338,13 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                       const Icon(Icons.qr_code,
                           size: 120, color: Colors.grey),
                       const SizedBox(height: 16),
-                      const Text(
-                        "No hay QR activo",
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      // Mensaje diferente según rol
+                      Text(
+                        _rol == 'ADMIN'
+                            ? "No hay QR activo"
+                            : "No hay QR activo. Contacta al administrador.",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     ],
                   ],

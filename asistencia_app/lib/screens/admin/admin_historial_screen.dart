@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/secure_storage.dart';
 
 class AdminHistorialScreen extends StatefulWidget {
   const AdminHistorialScreen({super.key});
@@ -14,17 +15,18 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   List<dynamic> _filtrados = [];
   List<dynamic> _usuariosParaEliminar = [];
   bool _isLoading = true;
+  String _rol = '';
   final TextEditingController _searchController = TextEditingController();
   dynamic _usuarioEliminar;
   DateTime? _fechaEliminar;
 
-  // Filtros del historial
   DateTime? _fechaFiltro;
   String? _estadoFiltro;
 
   @override
   void initState() {
     super.initState();
+    _cargarRol();
     _fetchHistorial();
     _searchController.addListener(_filtrar);
   }
@@ -33,6 +35,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _cargarRol() async {
+    final rol = await SecureStorage.getRol();
+    setState(() => _rol = rol ?? '');
   }
 
   Future<void> _fetchHistorial() async {
@@ -57,17 +64,14 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filtrados = _registros.where((item) {
-        final nombre = "${item['nombres']} ${item['apellidos']}".toLowerCase();
+        final nombre =
+            "${item['nombres']} ${item['apellidos']}".toLowerCase();
         final coincideNombre = nombre.contains(query);
-
-        final coincideFecha =
-            _fechaFiltro == null ||
+        final coincideFecha = _fechaFiltro == null ||
             item['fecha'].toString().substring(0, 10) ==
                 "${_fechaFiltro!.year}-${_fechaFiltro!.month.toString().padLeft(2, '0')}-${_fechaFiltro!.day.toString().padLeft(2, '0')}";
-
         final coincideEstado =
             _estadoFiltro == null || item['estado'] == _estadoFiltro;
-
         return coincideNombre && coincideFecha && coincideEstado;
       }).toList();
     });
@@ -110,11 +114,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
               const Divider(),
               const SizedBox(height: 8),
 
-              // ── Filtro por fecha ──
-              const Text(
-                "Fecha",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              const Text("Fecha",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
@@ -150,7 +151,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                         ? "${_fechaFiltro!.year}-${_fechaFiltro!.month.toString().padLeft(2, '0')}-${_fechaFiltro!.day.toString().padLeft(2, '0')}"
                         : "Todas las fechas",
                     style: TextStyle(
-                      color: _fechaFiltro != null ? Colors.black : Colors.grey,
+                      color:
+                          _fechaFiltro != null ? Colors.black : Colors.grey,
                     ),
                   ),
                 ),
@@ -158,26 +160,32 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
               const SizedBox(height: 16),
 
-              // ── Filtro por estado ──
-              const Text(
-                "Estado",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              const Text("Estado",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children:
-                [null, 'PUNTUAL', 'TARDE', 'SIN_SALIDA', 'AUSENTE'].map((estado) {
-                  final label = estado == null ? 'Todos'
-                      : estado == 'PUNTUAL' ? 'Puntual'
-                      : estado == 'TARDE' ? 'Tarde'
-                      : estado == 'SIN_SALIDA' ? 'Sin salida'
-                      : 'Ausente';
-                  final color = estado == null ? Colors.indigo
-                      : estado == 'PUNTUAL' ? Colors.green
-                      : estado == 'TARDE' ? Colors.orange
-                      : estado == 'SIN_SALIDA' ? Colors.red
-                      : Colors.purple;
+                children: [
+                  null, 'PUNTUAL', 'TARDE', 'SIN_SALIDA', 'AUSENTE'
+                ].map((estado) {
+                  final label = estado == null
+                      ? 'Todos'
+                      : estado == 'PUNTUAL'
+                          ? 'Puntual'
+                          : estado == 'TARDE'
+                              ? 'Tarde'
+                              : estado == 'SIN_SALIDA'
+                                  ? 'Sin salida'
+                                  : 'Ausente';
+                  final color = estado == null
+                      ? Colors.indigo
+                      : estado == 'PUNTUAL'
+                          ? Colors.green
+                          : estado == 'TARDE'
+                              ? Colors.orange
+                              : estado == 'SIN_SALIDA'
+                                  ? Colors.red
+                                  : Colors.purple;
                   final seleccionado = _estadoFiltro == estado;
                   return ChoiceChip(
                     label: Text(label),
@@ -214,7 +222,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
         _usuariosParaEliminar = todos
-            .where((u) => u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
+            .where((u) =>
+                u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
             .toList();
       }
     } catch (e) {
@@ -234,8 +243,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+              borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
               Icon(Icons.delete_sweep, color: Colors.red),
@@ -263,12 +271,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                           onPressed: () => Navigator.pop(context, null),
                           child: const Text("Todos los usuarios"),
                         ),
-                        ..._usuariosParaEliminar.map(
-                          (u) => SimpleDialogOption(
-                            onPressed: () => Navigator.pop(context, u),
-                            child: Text(u['correo'] ?? ''),
-                          ),
-                        ),
+                        ..._usuariosParaEliminar.map((u) =>
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, u),
+                              child: Text(u['correo'] ?? ''),
+                            )),
                       ],
                     ),
                   );
@@ -329,7 +336,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                 TextButton.icon(
                   icon: const Icon(Icons.close, size: 14),
                   label: const Text("Quitar filtro de fecha"),
-                  onPressed: () => setDialogState(() => _fechaEliminar = null),
+                  onPressed: () =>
+                      setDialogState(() => _fechaEliminar = null),
                 ),
             ],
           ),
@@ -357,7 +365,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
         title: const Text("¿Estás seguro?"),
         content: Text(
           _usuarioEliminar == null && _fechaEliminar == null
@@ -387,9 +396,8 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       String path = "/asistencia/eliminar";
       final params = <String>[];
 
-      if (_usuarioEliminar != null) {
+      if (_usuarioEliminar != null)
         params.add("idUsuario=${_usuarioEliminar['id_usuario']}");
-      }
       if (_fechaEliminar != null) {
         final f = _fechaEliminar!;
         final fechaStr =
@@ -415,16 +423,11 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
 
   Color _colorEstado(String estado) {
     switch (estado) {
-      case 'PUNTUAL':
-        return Colors.green;
-      case 'TARDE':
-        return Colors.orange;
-      case 'SIN_SALIDA':
-        return Colors.red;
-      case 'AUSENTE':
-        return Colors.purple;
-      default:
-        return Colors.grey;
+      case 'PUNTUAL': return Colors.green;
+      case 'TARDE': return Colors.orange;
+      case 'SIN_SALIDA': return Colors.red;
+      case 'AUSENTE': return Colors.purple;
+      default: return Colors.grey;
     }
   }
 
@@ -448,11 +451,13 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            tooltip: "Eliminar registros",
-            onPressed: _mostrarDialogoEliminar,
-          ),
+          // ✅ Solo ADMIN puede eliminar
+          if (_rol == 'ADMIN')
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: "Eliminar registros",
+              onPressed: _mostrarDialogoEliminar,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchHistorial,
@@ -463,7 +468,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // ── Buscador + botón filtros ──
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -511,7 +515,6 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                   ),
                 ),
 
-                // ── Tabla ──
                 Expanded(
                   child: _filtrados.isEmpty
                       ? const Center(child: Text("No hay registros"))
@@ -535,47 +538,35 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
                                   final fecha = item['fecha']
                                       .toString()
                                       .substring(0, 10);
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(
-                                        Text(
-                                          "${item['nombres']} ${item['apellidos']}",
+                                  return DataRow(cells: [
+                                    DataCell(Text(
+                                        "${item['nombres']} ${item['apellidos']}")),
+                                    DataCell(Text(fecha)),
+                                    DataCell(
+                                        Text(item['hora_entrada'] ?? '--')),
+                                    DataCell(
+                                        Text(item['hora_salida'] ?? '--')),
+                                    DataCell(
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: _colorEstado(item['estado'])
+                                              .withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                      ),
-                                      DataCell(Text(fecha)),
-                                      DataCell(
-                                        Text(item['hora_entrada'] ?? '--'),
-                                      ),
-                                      DataCell(
-                                        Text(item['hora_salida'] ?? '--'),
-                                      ),
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _colorEstado(
-                                              item['estado'],
-                                            ).withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            item['estado'],
-                                            style: TextStyle(
-                                              color: _colorEstado(
-                                                item['estado'],
-                                              ),
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        child: Text(
+                                          item['estado'],
+                                          style: TextStyle(
+                                            color:
+                                                _colorEstado(item['estado']),
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  );
+                                    ),
+                                  ]);
                                 }).toList(),
                               ),
                             ),

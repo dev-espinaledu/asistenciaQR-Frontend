@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/secure_storage.dart';
 import '../login_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -17,15 +18,21 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _sinSalidaHoy = 0;
   int _pendientesHoy = 0;
   bool _isLoading = true;
+  String _rol = '';
 
   @override
   void initState() {
     super.initState();
+    _cargarRol();
     _fetchResumen();
   }
 
+  Future<void> _cargarRol() async {
+    final rol = await SecureStorage.getRol();
+    setState(() => _rol = rol ?? '');
+  }
+
   Future<void> _fetchResumen() async {
-    setState(() => _isLoading = true);
     try {
       final response = await ApiService.get("/asistencia/resumen");
 
@@ -200,8 +207,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
-                    titulo: "Generar QR de Asistencia",
-                    subtitulo: "Genera un código QR válido por 30 minutos",
+                    titulo: "QR de Asistencia",
+                    // Subtítulo según rol
+                    subtitulo: _rol == 'ADMIN'
+                        ? "Genera un código QR válido"
+                        : "Visualiza el código QR activo",
                     icono: Icons.qr_code_2,
                     color: Colors.indigo,
                     onTap: () => Navigator.pushNamed(context, "/admin/qr"),
@@ -227,11 +237,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   const SizedBox(height: 12),
                   _menuButton(
                     titulo: "Gestionar Usuarios",
-                    subtitulo: "Crear, editar y eliminar usuarios",
+                    // Subtítulo según rol
+                    subtitulo: _rol == 'ADMIN'
+                        ? "Crear, editar y eliminar usuarios"
+                        : "Crear y editar usuarios",
                     icono: Icons.people,
                     color: Colors.purple,
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/admin/usuarios"),
+                    onTap: () => Navigator.pushNamed(context, "/admin/usuarios"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(

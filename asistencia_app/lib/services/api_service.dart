@@ -64,6 +64,10 @@ class ApiService {
     return response;
   }
 
+  static Future<String?> getRol() async {
+  return await SecureStorage.getRol();
+}
+
   // Si el servidor devuelve 401, cerrar sesión y redirigir al login
   static void _verificarToken(http.Response response) {
     if (response.statusCode == 401) {

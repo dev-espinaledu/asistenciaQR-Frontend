@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        if (rol == "ADMIN") {
+        if (rol == "ADMIN" || rol == "SUB_ADMIN") {
           Navigator.pushReplacementNamed(context, "/admin");
         } else if (rol == "PORTERO") {
           Navigator.pushReplacementNamed(context, "/portero");

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/secure_storage.dart';
 
 class AdminUsuariosScreen extends StatefulWidget {
   const AdminUsuariosScreen({super.key});
@@ -16,11 +17,13 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   String? _filtroRol;
   String? _filtroEstado;
   bool _ordenAlfabetico = false;
+  String _rol = '';
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _cargarRol();
     _fetchUsuarios();
     _searchController.addListener(_filtrar);
   }
@@ -31,13 +34,22 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
     super.dispose();
   }
 
+  Future<void> _cargarRol() async {
+    final rol = await SecureStorage.getRol();
+    setState(() => _rol = rol ?? '');
+  }
+
   Future<void> _fetchUsuarios() async {
     setState(() => _isLoading = true);
     try {
       final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
+        final todos = jsonDecode(response.body) as List;
         setState(() {
-          _usuarios = jsonDecode(response.body);
+          // ✅ SUB_ADMIN no ve administradores
+          _usuarios = _rol == 'SUB_ADMIN'
+              ? todos.where((u) => u['rol'] != 'ADMIN').toList()
+              : todos;
           _filtrados = _usuarios;
         });
       }
@@ -53,15 +65,13 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       final correo = u['correo'].toString().toLowerCase();
       final coincideCorreo = correo.contains(query);
       final coincideRol = _filtroRol == null || u['rol'] == _filtroRol;
-      final coincideEstado =
-          _filtroEstado == null ||
+      final coincideEstado = _filtroEstado == null ||
           (_filtroEstado == 'ACTIVO'
               ? u['estado'] == true
               : u['estado'] == false);
       return coincideCorreo && coincideRol && coincideEstado;
     }).toList();
 
-    // Ordenar alfabéticamente por correo
     if (_ordenAlfabetico) {
       resultado.sort(
         (a, b) => a['correo'].toString().compareTo(b['correo'].toString()),
@@ -91,7 +101,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     "Filtros",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  // Limpiar filtros
                   TextButton.icon(
                     icon: const Icon(Icons.clear, size: 16),
                     label: const Text("Limpiar"),
@@ -110,21 +119,30 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
               const Divider(),
               const SizedBox(height: 8),
 
-              // Rol
               const Text("Rol", style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: [null, 'DOCENTE', 'ADMINISTRATIVO', 'ADMIN'].map((
-                  rol,
-                ) {
+                children: [
+                  // ✅ SUB_ADMIN no ve filtro ADMIN
+                  null,
+                  'DOCENTE',
+                  'ADMINISTRATIVO',
+                  'SUB_ADMIN',
+                  'PORTERO',
+                  if (_rol == 'ADMIN') 'ADMIN',
+                ].map((rol) {
                   final label = rol == null
                       ? 'Todos'
                       : rol == 'DOCENTE'
-                      ? 'Docente'
-                      : rol == 'ADMINISTRATIVO'
-                      ? 'Administrativo'
-                      : 'Admin';
+                          ? 'Docente'
+                          : rol == 'ADMINISTRATIVO'
+                              ? 'Administrativo'
+                              : rol == 'SUB_ADMIN'
+                                  ? 'Sub-Admin'
+                                  : rol == 'PORTERO'
+                                      ? 'Portero'
+                                      : 'Admin';
                   final seleccionado = _filtroRol == rol;
                   return ChoiceChip(
                     label: Text(label),
@@ -141,11 +159,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
               const SizedBox(height: 16),
 
-              // Estado
-              const Text(
-                "Estado",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              const Text("Estado",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -153,8 +168,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   final label = estado == null
                       ? 'Todos'
                       : estado == 'ACTIVO'
-                      ? 'Activo'
-                      : 'Inactivo';
+                          ? 'Activo'
+                          : 'Inactivo';
                   final seleccionado = _filtroEstado == estado;
                   return ChoiceChip(
                     label: Text(label),
@@ -171,11 +186,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
               const SizedBox(height: 16),
 
-              // Orden alfabético
-              const Text(
-                "Orden",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              const Text("Orden",
+                  style: TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -266,23 +278,18 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   }
 
   Future<void> _mostrarFormulario({dynamic usuario}) async {
-    final correoController = TextEditingController(
-      text: usuario?['correo'] ?? '',
-    );
+    final correoController =
+        TextEditingController(text: usuario?['correo'] ?? '');
     final passwordController = TextEditingController();
     final nuevaPasswordController = TextEditingController();
-    final nombresController = TextEditingController(
-      text: usuario?['nombres'] ?? '',
-    );
-    final apellidosController = TextEditingController(
-      text: usuario?['apellidos'] ?? '',
-    );
-    final documentoController = TextEditingController(
-      text: usuario?['documento'] ?? '',
-    );
-    final telefonoController = TextEditingController(
-      text: usuario?['telefono'] ?? '',
-    );
+    final nombresController =
+        TextEditingController(text: usuario?['nombres'] ?? '');
+    final apellidosController =
+        TextEditingController(text: usuario?['apellidos'] ?? '');
+    final documentoController =
+        TextEditingController(text: usuario?['documento'] ?? '');
+    final telefonoController =
+        TextEditingController(text: usuario?['telefono'] ?? '');
     String rolSeleccionado = usuario?['rol'] ?? 'DOCENTE';
     final formKey = GlobalKey<FormState>();
 
@@ -299,34 +306,36 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 TextFormField(
                   controller: nombresController,
                   decoration: const InputDecoration(labelText: "Nombres"),
-                  validator: (v) => v == null || v.isEmpty ? "Requerido" : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Requerido" : null,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: apellidosController,
                   decoration: const InputDecoration(labelText: "Apellidos"),
-                  validator: (v) => v == null || v.isEmpty ? "Requerido" : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Requerido" : null,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: documentoController,
                   decoration: const InputDecoration(labelText: "Documento"),
-                  validator: (v) => v == null || v.isEmpty ? "Requerido" : null,
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Requerido" : null,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: telefonoController,
                   decoration: const InputDecoration(
-                    labelText: "Teléfono (opcional)",
-                  ),
+                      labelText: "Teléfono (opcional)"),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: correoController,
-                  decoration: const InputDecoration(
-                    labelText: "Correo electrónico",
-                  ),
-                  validator: (v) => v == null || v.isEmpty ? "Requerido" : null,
+                  decoration:
+                      const InputDecoration(labelText: "Correo electrónico"),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Requerido" : null,
                 ),
                 const SizedBox(height: 8),
 
@@ -334,12 +343,12 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   TextFormField(
                     controller: passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: "Contraseña"),
+                    decoration:
+                        const InputDecoration(labelText: "Contraseña"),
                     validator: (v) {
                       if (v == null || v.isEmpty) return "Requerido";
-                      if (v.length < 6) {
+                      if (v.length < 6)
                         return "Debe tener al menos 6 caracteres";
-                      }
                       return null;
                     },
                   ),
@@ -362,20 +371,25 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 ],
 
                 const SizedBox(height: 8),
+
+                // ✅ Roles según el rol del usuario logueado
                 DropdownButtonFormField<String>(
-                  initialValue: rolSeleccionado,
+                  value: rolSeleccionado,
                   decoration: const InputDecoration(labelText: "Rol"),
-                  items: const [
-                    DropdownMenuItem(value: 'DOCENTE', child: Text("Docente")),
-                    DropdownMenuItem(
-                      value: 'ADMINISTRATIVO',
-                      child: Text("Administrativo"),
-                    ),
-                    DropdownMenuItem(
-                      value: 'ADMIN',
-                      child: Text("Administrador"),
-                    ),
-                    DropdownMenuItem(value: 'PORTERO', child: Text("Portero")),
+                  items: [
+                    const DropdownMenuItem(
+                        value: 'DOCENTE', child: Text("Docente")),
+                    const DropdownMenuItem(
+                        value: 'ADMINISTRATIVO',
+                        child: Text("Administrativo")),
+                    const DropdownMenuItem(
+                        value: 'PORTERO', child: Text("Portero")),
+                    const DropdownMenuItem(
+                        value: 'SUB_ADMIN', child: Text("Sub-Administrador")),
+                    // ✅ Solo ADMIN puede crear otros ADMIN
+                    if (_rol == 'ADMIN')
+                      const DropdownMenuItem(
+                          value: 'ADMIN', child: Text("Administrador")),
                   ],
                   onChanged: (v) => rolSeleccionado = v!,
                 ),
@@ -475,7 +489,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       });
 
       if (nuevaPassword != null && response.statusCode == 200) {
-        final passResponse = await ApiService.put("/usuarios/$id/password", {
+        final passResponse =
+            await ApiService.put("/usuarios/$id/password", {
           "password": nuevaPassword,
         });
 
@@ -544,7 +559,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // ── Buscador + botón filtros ──
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -560,7 +574,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Botón filtros con badge si hay filtros activos
                       Stack(
                         children: [
                           IconButton(
@@ -574,8 +587,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                             ),
                             onPressed: _mostrarFiltros,
                           ),
-                          // Badge rojo si hay filtros activos
-                          if (_filtroRol != null || _filtroEstado != null || _ordenAlfabetico)
+                          if (_filtroRol != null ||
+                              _filtroEstado != null ||
+                              _ordenAlfabetico)
                             Positioned(
                               right: 6,
                               top: 6,
@@ -593,16 +607,15 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     ],
                   ),
                 ),
-                // ── Lista de usuarios ──
                 Expanded(
                   child: _filtrados.isEmpty
                       ? const Center(child: Text("No hay usuarios"))
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: _filtrados.length,
                           itemBuilder: (context, index) {
                             final u = _filtrados[index];
-
                             return Card(
                               margin: const EdgeInsets.only(bottom: 10),
                               child: ListTile(
@@ -623,7 +636,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                     Chip(
                                       label: Text(
                                         u['rol'],
-                                        style: const TextStyle(fontSize: 11),
+                                        style:
+                                            const TextStyle(fontSize: 11),
                                       ),
                                       padding: EdgeInsets.zero,
                                     ),
@@ -633,7 +647,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                         u['estado'] == true
                                             ? "Activo"
                                             : "Inactivo",
-                                        style: const TextStyle(fontSize: 11),
+                                        style:
+                                            const TextStyle(fontSize: 11),
                                       ),
                                       backgroundColor: u['estado'] == true
                                           ? Colors.green.shade100
@@ -654,43 +669,42 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                         ],
                                       ),
                                     ),
-                                    PopupMenuItem(
-                                      value: 'estado',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            u['estado'] == true
+                                    // ✅ Solo ADMIN puede activar/desactivar
+                                    if (_rol == 'ADMIN')
+                                      PopupMenuItem(
+                                        value: 'estado',
+                                        child: Row(
+                                          children: [
+                                            Icon(u['estado'] == true
                                                 ? Icons.block
-                                                : Icons.check_circle,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            u['estado'] == true
+                                                : Icons.check_circle),
+                                            const SizedBox(width: 8),
+                                            Text(u['estado'] == true
                                                 ? "Desactivar"
-                                                : "Activar",
-                                          ),
-                                        ],
+                                                : "Activar"),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'eliminar',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete, color: Colors.red),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            "Eliminar",
-                                            style: TextStyle(color: Colors.red),
-                                          ),
-                                        ],
+                                    // ✅ Solo ADMIN puede eliminar
+                                    if (_rol == 'ADMIN')
+                                      const PopupMenuItem(
+                                        value: 'eliminar',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                color: Colors.red),
+                                            SizedBox(width: 8),
+                                            Text("Eliminar",
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                   ],
                                   onSelected: (value) async {
                                     if (value == 'editar') {
-                                      final detalle = await _fetchDetalle(
-                                        u['id_usuario'],
-                                      );
+                                      final detalle =
+                                          await _fetchDetalle(u['id_usuario']);
                                       if (detalle != null) {
                                         _mostrarFormulario(usuario: detalle);
                                       }
