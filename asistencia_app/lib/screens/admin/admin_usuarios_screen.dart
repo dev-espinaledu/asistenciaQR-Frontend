@@ -46,7 +46,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
         setState(() {
-          // ✅ SUB_ADMIN no ve administradores
+          // SUB_ADMIN no ve administradores
           _usuarios = _rol == 'SUB_ADMIN'
               ? todos.where((u) => u['rol'] != 'ADMIN').toList()
               : todos;
@@ -123,26 +123,19 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: [
-                  // ✅ SUB_ADMIN no ve filtro ADMIN
-                  null,
-                  'DOCENTE',
-                  'ADMINISTRATIVO',
-                  'SUB_ADMIN',
-                  'PORTERO',
-                  if (_rol == 'ADMIN') 'ADMIN',
-                ].map((rol) {
-                  final label = rol == null
-                      ? 'Todos'
-                      : rol == 'DOCENTE'
-                          ? 'Docente'
-                          : rol == 'ADMINISTRATIVO'
-                              ? 'Administrativo'
-                              : rol == 'SUB_ADMIN'
-                                  ? 'Sub-Admin'
-                                  : rol == 'PORTERO'
-                                      ? 'Portero'
-                                      : 'Admin';
+                children: 
+                  // SUB_ADMIN no ve filtro ADMIN
+                  [null, 'DOCENTE', 'ADMINISTRATIVO', 'SERVICIOS_GENERALES', 'PRACTICANTE', 'SUB_ADMIN', 'PORTERO',
+                    if (_rol == 'ADMIN') 'ADMIN',
+                  ].map((rol) {
+                    final label = rol == null ? 'Todos'
+                        : rol == 'DOCENTE' ? 'Docente'
+                        : rol == 'ADMINISTRATIVO' ? 'Administrativo'
+                        : rol == 'SERVICIOS_GENERALES' ? 'Servicios Generales'
+                        : rol == 'PRACTICANTE' ? 'Practicante'
+                        : rol == 'SUB_ADMIN' ? 'Sub-Admin'
+                        : rol == 'PORTERO' ? 'Portero'
+                        : 'Admin';
                   final seleccionado = _filtroRol == rol;
                   return ChoiceChip(
                     label: Text(label),
@@ -382,6 +375,12 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     const DropdownMenuItem(
                         value: 'ADMINISTRATIVO',
                         child: Text("Administrativo")),
+                    const DropdownMenuItem(
+                        value: 'SERVICIOS_GENERALES',
+                        child: Text("Servicios Generales")),
+                    const DropdownMenuItem(
+                        value: 'PRACTICANTE',
+                        child: Text("Practicante")),
                     const DropdownMenuItem(
                         value: 'PORTERO', child: Text("Portero")),
                     const DropdownMenuItem(

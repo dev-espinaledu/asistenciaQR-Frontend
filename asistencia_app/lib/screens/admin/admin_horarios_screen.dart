@@ -85,7 +85,10 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
         final todos = jsonDecode(response.body) as List;
         setState(() {
           _usuarios = todos.where((u) =>
-            u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO'
+            u['rol'] == 'DOCENTE' ||
+            u['rol'] == 'ADMINISTRATIVO' ||
+            u['rol'] == 'SERVICIOS_GENERALES' ||
+            u['rol'] == 'PRACTICANTE'
           ).toList();
         });
       }

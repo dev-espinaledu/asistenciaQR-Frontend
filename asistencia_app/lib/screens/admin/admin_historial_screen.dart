@@ -221,10 +221,12 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       final response = await ApiService.get("/usuarios");
       if (response.statusCode == 200) {
         final todos = jsonDecode(response.body) as List;
-        _usuariosParaEliminar = todos
-            .where((u) =>
-                u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
-            .toList();
+        _usuariosParaEliminar = todos.where((u) =>
+          u['rol'] == 'DOCENTE' ||
+          u['rol'] == 'ADMINISTRATIVO' ||
+          u['rol'] == 'SERVICIOS_GENERALES' ||
+          u['rol'] == 'PRACTICANTE'
+        ).toList();
       }
     } catch (e) {
       _showError("Error al cargar usuarios");

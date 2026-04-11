@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacementNamed(context, "/admin");
       } else if (rol == "PORTERO") {
         Navigator.pushReplacementNamed(context, "/portero");
-      } else if (rol == "DOCENTE" || rol == "ADMINISTRATIVO") {
+      } else if (rol == "DOCENTE" || rol == "ADMINISTRATIVO" || rol == "SERVICIOS_GENERALES" || rol == "PRACTICANTE") {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
