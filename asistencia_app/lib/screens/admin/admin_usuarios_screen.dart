@@ -372,9 +372,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
                 const SizedBox(height: 8),
 
-                // ✅ Roles según el rol del usuario logueado
+                // Roles según el rol del usuario logueado
                 DropdownButtonFormField<String>(
-                  value: rolSeleccionado,
+                  initialValue: rolSeleccionado,
                   decoration: const InputDecoration(labelText: "Rol"),
                   items: [
                     const DropdownMenuItem(
@@ -386,7 +386,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                         value: 'PORTERO', child: Text("Portero")),
                     const DropdownMenuItem(
                         value: 'SUB_ADMIN', child: Text("Sub-Administrador")),
-                    // ✅ Solo ADMIN puede crear otros ADMIN
+                    // Solo ADMIN puede crear otros ADMIN
                     if (_rol == 'ADMIN')
                       const DropdownMenuItem(
                           value: 'ADMIN', child: Text("Administrador")),
@@ -669,7 +669,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                         ],
                                       ),
                                     ),
-                                    // ✅ Solo ADMIN puede activar/desactivar
+                                    // Solo ADMIN puede activar/desactivar
                                     if (_rol == 'ADMIN')
                                       PopupMenuItem(
                                         value: 'estado',
@@ -685,7 +685,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                                           ],
                                         ),
                                       ),
-                                    // ✅ Solo ADMIN puede eliminar
+                                    // Solo ADMIN puede eliminar
                                     if (_rol == 'ADMIN')
                                       const PopupMenuItem(
                                         value: 'eliminar',
