@@ -13,6 +13,7 @@ import 'screens/admin/admin_horarios_screen.dart';
 import 'screens/admin/admin_usuarios_screen.dart';
 import 'screens/admin/admin_reportes_screen.dart';
 import 'screens/admin/admin_estadisticas_screen.dart';
+import 'screens/admin/admin_registro_manual_screen.dart';
 import 'screens/portero_screen.dart';
 import 'screens/portero_qr_screen.dart';
 import 'screens/portero_perfil_screen.dart';
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/admin/usuarios': (context) => const AdminUsuariosScreen(),
         '/admin/reportes': (context) => const AdminReportesScreen(),
         '/admin/estadisticas': (context) => const AdminEstadisticasScreen(),
+        '/admin/registro-manual': (context) => const AdminRegistroManualScreen(),
       },
     );
   }

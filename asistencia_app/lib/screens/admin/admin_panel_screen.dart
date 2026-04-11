@@ -218,6 +218,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
+                    titulo: "Registro Manual",
+                    subtitulo: "Registra asistencia manualmente por usuario y fecha",
+                    icono: Icons.edit_calendar,
+                    color: Colors.blueAccent,
+                    onTap: () => Navigator.pushNamed(context, "/admin/registro-manual"),
+                  ),
+                  const SizedBox(height: 12),
+                  _menuButton(
                     titulo: "Historial General",
                     subtitulo: "Consulta y corrige registros de asistencia",
                     icono: Icons.history,
