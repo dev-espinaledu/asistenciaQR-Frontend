@@ -16,6 +16,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
   DateTime? _expiracion;
   bool _isLoading = false;
   bool _fetchingQR = false;
+  double _duracionMinutos = 1.0;
 
   Timer? _countdownTimer;
   Duration _tiempoRestante = Duration.zero;
@@ -23,6 +24,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchConfiguracion();
     _fetchQRActivo();
   }
 
@@ -32,26 +34,35 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
     super.dispose();
   }
 
-  // Obtener QR activo o generar uno nuevo si no existe
+  Future<void> _fetchConfiguracion() async {
+    try {
+      final response = await ApiService.get("/qr/configuracion");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _duracionMinutos = (data['duracionMinutos'] as num).toDouble();
+        });
+      }
+    } catch (e) {
+      // silencioso
+    }
+  }
+
   Future<void> _fetchQRActivo() async {
     if (_isLoading) return;
-
     setState(() => _isLoading = true);
 
     try {
       final response = await ApiService.get("/qr/activo");
-
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         setState(() {
           _codigo = data["codigo"];
           _expiracion = DateTime.parse(data["fecha_expiracion"]);
           _isLoading = false;
         });
-
         _iniciarContador();
       } else if (response.statusCode == 404) {
         await _generarNuevoQR();
@@ -66,22 +77,18 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
     }
   }
 
-  // Generar un nuevo QR (si no hay activo o por botón de refrescar)
   Future<void> _generarNuevoQR() async {
     try {
       final response = await ApiService.post("/qr/generar", {});
-
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         setState(() {
           _codigo = data["codigo"];
           _expiracion = DateTime.parse(data["fecha_expiracion"]);
           _isLoading = false;
         });
-
         _iniciarContador();
       } else {
         setState(() => _isLoading = false);
@@ -94,44 +101,34 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
     }
   }
 
-  // Contador para mostrar tiempo restante del QR activo
   void _iniciarContador() {
     _countdownTimer?.cancel();
-
     _actualizarTiempoRestante();
-
-    _countdownTimer =
-        Timer.periodic(const Duration(seconds: 1), (_) {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _actualizarTiempoRestante();
     });
   }
 
   void _actualizarTiempoRestante() {
     if (_expiracion == null) return;
-
     final ahoraUtc = DateTime.now().toUtc();
     final restante = _expiracion!.toUtc().difference(ahoraUtc);
 
     if (restante.isNegative) {
       _countdownTimer?.cancel();
-
       setState(() {
         _tiempoRestante = Duration.zero;
         _codigo = null;
       });
-
       if (!_isLoading && !_fetchingQR) {
         _fetchingQR = true;
-        _fetchQRActivo().whenComplete(() {
-          _fetchingQR = false;
-        });
+        _fetchQRActivo().whenComplete(() => _fetchingQR = false);
       }
     } else {
       setState(() => _tiempoRestante = restante);
     }
   }
 
-  // Formato contador y color según tiempo restante
   String get _tiempoFormateado {
     final minutos =
         _tiempoRestante.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -146,13 +143,99 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
     return Colors.red;
   }
 
+  void _mostrarConfiguracion() {
+    double minutosTemp = _duracionMinutos.roundToDouble();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Configurar duración del QR",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "Se aplicará a todos los QR generados a partir de ahora.",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const Divider(height: 24),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Duración",
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    Text(
+                      "${minutosTemp.round()} minutos",
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo,
+                          fontSize: 16),
+                    ),
+                  ],
+                ),
+                Slider(
+                  value: minutosTemp,
+                  min: 1,
+                  max: 60,
+                  divisions: 59,
+                  activeColor: Colors.indigo,
+                  label: "${minutosTemp.round()} min",
+                  onChanged: (v) =>
+                      setSheetState(() => minutosTemp = v.roundToDouble()),
+                ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      final response = await ApiService.put(
+                        "/qr/configuracion",
+                        {"duracionMinutos": minutosTemp.round()},
+                      );
+                      if (response.statusCode == 200) {
+                        setState(() => _duracionMinutos = minutosTemp);
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                        _showSuccess("Configuración guardada correctamente");
+                      } else {
+                        _showError("Error al guardar configuración");
+                      }
+                    },
+                    child: const Text("Guardar"),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
-  // UI del QR activo
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,6 +244,11 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: "Configurar duración",
+            onPressed: _mostrarConfiguracion,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _generarNuevoQR,
@@ -175,7 +263,6 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // SOLO DEPENDE DE QUE EXISTA CÓDIGO
                     if (_codigo != null) ...[
                       const Text(
                         "Escanea para registrar asistencia",
@@ -186,7 +273,6 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -206,9 +292,7 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                           size: 260,
                         ),
                       ),
-
                       const SizedBox(height: 32),
-
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
@@ -221,7 +305,8 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.timer, color: _colorContador, size: 22),
+                            Icon(Icons.timer,
+                                color: _colorContador, size: 22),
                             const SizedBox(width: 10),
                             Text(
                               "Expira en $_tiempoFormateado",
@@ -235,7 +320,8 @@ class _AdminQrScreenState extends State<AdminQrScreen> {
                         ),
                       ),
                     ] else ...[
-                      const Icon(Icons.qr_code, size: 120, color: Colors.grey),
+                      const Icon(Icons.qr_code,
+                          size: 120, color: Colors.grey),
                       const SizedBox(height: 16),
                       const Text(
                         "No hay QR activo",
