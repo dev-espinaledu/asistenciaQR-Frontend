@@ -383,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(height: 9),
                                 Text(
-                                  "Creado con ❤️ por Edu Espinal",
+                                  "Creado con ❤️ por Eduardo Espinal",
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey.shade400,
