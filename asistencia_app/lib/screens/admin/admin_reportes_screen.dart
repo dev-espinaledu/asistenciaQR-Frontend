@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
+import 'package:universal_html/html.dart' as html;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../services/secure_storage.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
 
 class AdminReportesScreen extends StatefulWidget {
   const AdminReportesScreen({super.key});
@@ -122,59 +124,69 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
     return map;
   }
 
-  Future<void> _exportarExcel() async {
-    if (_resultados.isEmpty) {
-      _showError("No hay datos para exportar");
+Future<void> _exportarExcel() async {
+  if (_resultados.isEmpty) {
+    _showError("No hay datos para exportar");
+    return;
+  }
+  try {
+    final desde = _formatFecha(_desde);
+    final hasta = _formatFecha(_hasta);
+    String path = "/asistencia/excel?desde=$desde&hasta=$hasta";
+
+    if (_usuarioSeleccionado != null) {
+      path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
+    }
+    if (_estadoSeleccionado != null) {
+      path += "&estado=$_estadoSeleccionado";
+    }
+
+    final response = await ApiService.get(path);
+
+    if (response.statusCode != 200) {
+      _showError("Error al generar el reporte");
       return;
     }
 
-    try {
-      final desde = _formatFecha(_desde);
-      final hasta = _formatFecha(_hasta);
+    final nombreArchivo = "reporte_asistencia_${desde}_$hasta.xlsx";
 
-      String path = "/asistencia/excel?desde=$desde&hasta=$hasta";
-
-      if (_usuarioSeleccionado != null) {
-        path += "&idUsuario=${_usuarioSeleccionado['id_usuario']}";
-      }
-      if (_estadoSeleccionado != null) {
-        path += "&estado=$_estadoSeleccionado";
-      }
-
-      final response = await ApiService.get(path);
-
-      if (response.statusCode != 200) {
-        _showError("Error al generar el reporte");
-        return;
-      }
-
-      final nombreArchivo = "reporte_asistencia_${desde}_$hasta.xlsx";
-
+    if (kIsWeb) {
+      // Descarga en web
+      final bytes = response.bodyBytes;
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      // ignore: unused_local_variable
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute("download", nombreArchivo)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      // Descarga en Android
       Directory dir;
       if (Platform.isAndroid) {
         dir = (await getExternalStorageDirectory())!;
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
-
       final pathFile = "${dir.path}/$nombreArchivo";
       final file = File(pathFile);
       await file.writeAsBytes(response.bodyBytes);
       await OpenFilex.open(pathFile);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Archivo guardado: $nombreArchivo"),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      _showError("Error de conexión");
     }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Archivo guardado: $nombreArchivo"),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  } catch (e) {
+    _showError("Error de conexión");
   }
+}
 
   Color _colorEstado(String estado) {
     switch (estado) {
@@ -365,7 +377,7 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.grey),
                   ),
-                  // ✅ Solo ADMIN puede exportar Excel
+                  // Solo ADMIN puede exportar Excel
                   if (_rol == 'ADMIN')
                     FilledButton.icon(
                       icon: const Icon(Icons.download, size: 16),
