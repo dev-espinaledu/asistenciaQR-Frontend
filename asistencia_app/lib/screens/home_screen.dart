@@ -352,6 +352,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   _accionCard(
+                    icono: Icons.calendar_month,
+                    titulo: "Días no laborables",
+                    subtitulo: "Consulta los días sin asistencia",
+                    color: Colors.orange,
+                    onTap: () => Navigator.pushNamed(context, '/calendario'),
+                  ),
+                  const SizedBox(height: 12),
+                  _accionCard(
                     icono: Icons.person_outline,
                     titulo: "Mi perfil",
                     subtitulo: "Cambia tu contraseña",

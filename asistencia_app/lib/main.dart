@@ -4,6 +4,8 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'screens/history_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/calendario_screen.dart';
 import 'screens/admin/admin_panel_screen.dart';
 import 'screens/admin/admin_qr_screen.dart';
 import 'screens/admin/admin_historial_screen.dart';
@@ -11,7 +13,6 @@ import 'screens/admin/admin_horarios_screen.dart';
 import 'screens/admin/admin_usuarios_screen.dart';
 import 'screens/admin/admin_reportes_screen.dart';
 import 'screens/admin/admin_estadisticas_screen.dart';
-import 'screens/profile_screen.dart';
 import 'screens/portero_screen.dart';
 import 'screens/portero_qr_screen.dart';
 import 'screens/portero_perfil_screen.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/perfil': (context) => const ProfileScreen(),
         '/scanner': (context) => const ScannerScreen(),
         '/historial': (context) => const HistoryScreen(),
+        '/calendario': (context) => const CalendarioScreen(),
         '/portero': (context) => const PorteroScreen(),
         '/portero/qr': (context) => const PorteroQrScreen(),
         '/portero/perfil': (context) => const PorteroPerfilScreen(),
