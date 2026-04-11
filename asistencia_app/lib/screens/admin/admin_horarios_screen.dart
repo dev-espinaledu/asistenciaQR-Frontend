@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../../services/api_service.dart';
 
 class AdminHorariosScreen extends StatefulWidget {
@@ -14,6 +15,10 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
   dynamic _usuarioSeleccionado;
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // ── Días no laborables ──
+  List<dynamic> _diasNoLaborables = [];
+  DateTime _focusedDay = DateTime.now();
 
   final List<String> _diasSemana = [
     '', 'Lunes', 'Martes', 'Miércoles',
@@ -33,7 +38,6 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
   late List<TextEditingController> _toleranciaControllers;
   late List<bool> _habilitados;
 
-  // ── Horario general ──
   int _diaGeneralSeleccionado = 1;
   final TextEditingController _entradaGeneralController =
       TextEditingController(text: "07:00");
@@ -54,6 +58,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
             text: _horarios[i]['tolerancia_minutos'].toString()));
     _habilitados = List.generate(7, (i) => i < 5);
     _fetchUsuarios();
+    _fetchDiasNoLaborables();
   }
 
   @override
@@ -90,6 +95,20 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     setState(() => _isLoading = false);
   }
 
+  Future<void> _fetchDiasNoLaborables({int? idUsuario}) async {
+    try {
+      final path = idUsuario != null
+          ? "/dias-no-laborables?idUsuario=$idUsuario"
+          : "/dias-no-laborables";
+      final response = await ApiService.get(path);
+      if (response.statusCode == 200) {
+        setState(() => _diasNoLaborables = jsonDecode(response.body));
+      }
+    } catch (e) {
+      // silencioso
+    }
+  }
+
   Future<void> _fetchHorarios(int idUsuario) async {
     try {
       final response = await ApiService.get("/usuarios/$idUsuario/horarios");
@@ -115,38 +134,35 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     }
   }
 
-Future<void> _guardarHorarios() async {
-  final List<Map<String, dynamic>> horarios = List.generate(
-    7,
-    (i) => {
-      "dia_semana": i + 1,
-      "hora_entrada": _entradaControllers[i].text,
-      "hora_salida": _salidaControllers[i].text,
-      "tolerancia_minutos": int.tryParse(_toleranciaControllers[i].text) ?? 5,
-      "habilitado": _habilitados[i],
-    },
-  );
-
-  setState(() => _isSaving = true);
-  try {
-    final response = await ApiService.put(
-      "/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios",
-      {
-        "horarios": horarios,
+  Future<void> _guardarHorarios() async {
+    final List<Map<String, dynamic>> horarios = List.generate(
+      7,
+      (i) => {
+        "dia_semana": i + 1,
+        "hora_entrada": _entradaControllers[i].text,
+        "hora_salida": _salidaControllers[i].text,
+        "tolerancia_minutos": int.tryParse(_toleranciaControllers[i].text) ?? 5,
+        "habilitado": _habilitados[i],
       },
     );
 
-    if (response.statusCode == 200) {
-      _showSuccess("Horarios guardados correctamente");
-    } else {
-      final data = jsonDecode(response.body);
-      _showError(data["error"] ?? "Error al guardar");
+    setState(() => _isSaving = true);
+    try {
+      final response = await ApiService.put(
+        "/usuarios/${_usuarioSeleccionado['id_usuario']}/horarios",
+        {"horarios": horarios},
+      );
+      if (response.statusCode == 200) {
+        _showSuccess("Horarios guardados correctamente");
+      } else {
+        final data = jsonDecode(response.body);
+        _showError(data["error"] ?? "Error al guardar");
+      }
+    } catch (e) {
+      _showError("Error de conexión");
     }
-  } catch (e) {
-    _showError("Error de conexión");
+    setState(() => _isSaving = false);
   }
-  setState(() => _isSaving = false);
-}
 
   Future<void> _seleccionarHora(TextEditingController controller) async {
     final parts = controller.text.split(':');
@@ -154,17 +170,302 @@ Future<void> _guardarHorarios() async {
       hour: int.tryParse(parts[0]) ?? 7,
       minute: int.tryParse(parts[1]) ?? 0,
     );
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: inicial,
-    );
+    final picked = await showTimePicker(context: context, initialTime: inicial);
     if (picked != null) {
       controller.text =
           "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
     }
   }
 
-  // ── Diálogo horario general ──
+  // ── Calendario de días no laborables ──
+  void _mostrarCalendario() {
+    String _tipoSeleccionado = 'GENERAL';
+    dynamic _usuarioCalendario;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          // Obtener fechas no laborables según selección
+          Set<DateTime> diasMarcados = _diasNoLaborables
+              .where((d) {
+                if (_tipoSeleccionado == 'GENERAL') {
+                  // Solo mostrar días generales
+                  return d['tipo'] == 'GENERAL';
+                } else {
+                  // Mostrar días generales + días específicos del usuario
+                  return d['tipo'] == 'GENERAL' ||
+                      (d['tipo'] == 'USUARIO' &&
+                          d['id_usuario'] == _usuarioCalendario?['id_usuario']);
+                }
+              })
+              .map((d) {
+                final fecha = DateTime.parse(d['fecha']);
+                return DateTime(fecha.year, fecha.month, fecha.day);
+              })
+              .toSet();
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.85,
+            maxChildSize: 0.95,
+            minChildSize: 0.5,
+            expand: false,
+            builder: (context, scrollController) => SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Días no laborables",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      "Toca un día para marcarlo o desmarcarlo como no laborable.",
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 8),
+
+                    // ── Selector tipo ──
+                    const Text("Aplicar a:",
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text("Todos"),
+                          selected: _tipoSeleccionado == 'GENERAL',
+                          selectedColor: Colors.indigo.shade100,
+                          onSelected: (_) {
+                            setSheetState(() {
+                              _tipoSeleccionado = 'GENERAL';
+                              _usuarioCalendario = null;
+                            });
+                            _fetchDiasNoLaborables().then(
+                                (_) => setSheetState(() {}));
+                          },
+                        ),
+                        ChoiceChip(
+                          label: const Text("Usuario específico"),
+                          selected: _tipoSeleccionado == 'USUARIO',
+                          selectedColor: Colors.indigo.shade100,
+                          onSelected: (_) => setSheetState(
+                              () => _tipoSeleccionado = 'USUARIO'),
+                        ),
+                      ],
+                    ),
+
+                    // ── Selector usuario si es USUARIO ──
+                    if (_tipoSeleccionado == 'USUARIO') ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<dynamic>(
+                        value: _usuarioCalendario,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: "Seleccionar usuario",
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                              value: null,
+                              child: Text("Selecciona un usuario")),
+                          ..._usuarios.map((u) => DropdownMenuItem(
+                                value: u,
+                                child: Text(
+                                  "${u['correo']} (${u['rol']})",
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              )),
+                        ],
+                        onChanged: (v) {
+                          setSheetState(() => _usuarioCalendario = v);
+                          if (v != null) {
+                            _fetchDiasNoLaborables(
+                                    idUsuario: v['id_usuario'])
+                                .then((_) => setSheetState(() {}));
+                          }
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    // ── Calendario ──
+                    if (_tipoSeleccionado == 'GENERAL' ||
+                        (_tipoSeleccionado == 'USUARIO' &&
+                            _usuarioCalendario != null))
+                      TableCalendar(
+                        firstDay: DateTime(2025),
+                        lastDay: DateTime(2030),
+                        focusedDay: _focusedDay,
+                        calendarFormat: CalendarFormat.month,
+                        availableCalendarFormats: const {
+                          CalendarFormat.month: 'Mes',
+                        },
+                        headerStyle: const HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                        ),
+                        calendarStyle: CalendarStyle(
+                          todayDecoration: BoxDecoration(
+                            color: Colors.indigo.shade200,
+                            shape: BoxShape.circle,
+                          ),
+                          selectedDecoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        selectedDayPredicate: (day) {
+                          final d = DateTime(day.year, day.month, day.day);
+                          return diasMarcados.contains(d);
+                        },
+                        onDaySelected: (selectedDay, focusedDay) async {
+                          setState(() => _focusedDay = focusedDay);
+                          setSheetState(() => _focusedDay = focusedDay);
+
+                          final fecha = DateTime(selectedDay.year,
+                              selectedDay.month, selectedDay.day);
+                          final fechaStr =
+                              "${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
+
+                          // Verificar si es un día general (no se puede modificar desde modo USUARIO)
+                          final esGeneral = _diasNoLaborables.any((d) {
+                            final df = DateTime.parse(d['fecha']);
+                            final dfc = DateTime(df.year, df.month, df.day);
+                            return dfc == fecha && d['tipo'] == 'GENERAL';
+                          });
+
+                          if (_tipoSeleccionado == 'USUARIO' && esGeneral) {
+                            _showError("Este día es no laborable para todos. Cámbialo desde el modo 'Todos'.");
+                            return;
+                          }
+
+                          // Buscar si ya existe para este contexto específico
+                          final existente = _diasNoLaborables.where((d) {
+                            final df = DateTime.parse(d['fecha']);
+                            final dfc = DateTime(df.year, df.month, df.day);
+                            if (_tipoSeleccionado == 'GENERAL') {
+                              return dfc == fecha && d['tipo'] == 'GENERAL';
+                            } else {
+                              return dfc == fecha &&
+                                  d['tipo'] == 'USUARIO' &&
+                                  d['id_usuario'] ==
+                                      _usuarioCalendario['id_usuario'];
+                            }
+                          }).toList();
+
+                          if (existente.isNotEmpty) {
+                            final response = await ApiService.delete(
+                                "/dias-no-laborables/${existente[0]['id']}");
+                            if (response.statusCode == 200) {
+                              await _fetchDiasNoLaborables(
+                                idUsuario: _tipoSeleccionado == 'USUARIO'
+                                    ? _usuarioCalendario['id_usuario']
+                                    : null,
+                              );
+                              setSheetState(() {});
+                              _showSuccess("Día restaurado como laborable");
+                            }
+                          } else {
+                            final body = {
+                              "fecha": fechaStr,
+                              "tipo": _tipoSeleccionado,
+                              if (_tipoSeleccionado == 'USUARIO')
+                                "idUsuario": _usuarioCalendario['id_usuario'],
+                            };
+                            final response = await ApiService.post(
+                                "/dias-no-laborables", body);
+                            if (response.statusCode == 201) {
+                              await _fetchDiasNoLaborables(
+                                idUsuario: _tipoSeleccionado == 'USUARIO'
+                                    ? _usuarioCalendario['id_usuario']
+                                    : null,
+                              );
+                              setSheetState(() {});
+                              _showSuccess("Día marcado como no laborable");
+                            } else {
+                              final data = jsonDecode(response.body);
+                              _showError(data["error"] ?? "Error");
+                            }
+                          }
+                        },
+                        onPageChanged: (focusedDay) {
+                          setState(() => _focusedDay = focusedDay);
+                          setSheetState(() => _focusedDay = focusedDay);
+                        },
+                      )
+                    else
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            "Selecciona un usuario para ver su calendario",
+                            style: TextStyle(color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    // Leyenda
+                    Row(
+                      children: [
+                        Container(
+                          width: 14,
+                          height: 14,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text("No laborable",
+                            style: TextStyle(fontSize: 12)),
+                        const SizedBox(width: 16),
+                        Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade200,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text("Hoy", style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _mostrarDialogoHorarioGeneral() async {
     _diaGeneralSeleccionado = 1;
     _entradaGeneralController.text = "07:00";
@@ -194,8 +495,6 @@ Future<void> _guardarHorarios() async {
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const SizedBox(height: 16),
-
-                // Selector de día
                 DropdownButtonFormField<int>(
                   initialValue: _diaGeneralSeleccionado,
                   isExpanded: true,
@@ -211,10 +510,7 @@ Future<void> _guardarHorarios() async {
                   onChanged: (v) =>
                       setDialogState(() => _diaGeneralSeleccionado = v!),
                 ),
-
                 const SizedBox(height: 12),
-
-                // Hora entrada
                 TextFormField(
                   controller: _entradaGeneralController,
                   readOnly: true,
@@ -237,10 +533,7 @@ Future<void> _guardarHorarios() async {
                     }
                   },
                 ),
-
                 const SizedBox(height: 12),
-
-                // Hora salida
                 TextFormField(
                   controller: _salidaGeneralController,
                   readOnly: true,
@@ -258,15 +551,12 @@ Future<void> _guardarHorarios() async {
                     if (picked != null) {
                       setDialogState(() {
                         _salidaGeneralController.text =
-                            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+                            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '00')}";
                       });
                     }
                   },
                 ),
-
                 const SizedBox(height: 12),
-
-                // Tolerancia
                 TextFormField(
                   controller: _toleranciaGeneralController,
                   keyboardType: TextInputType.number,
@@ -322,7 +612,6 @@ Future<void> _guardarHorarios() async {
         ],
       ),
     );
-
     if (confirm != true) return;
     await _aplicarHorarioGeneral();
   }
@@ -338,11 +627,9 @@ Future<void> _guardarHorarios() async {
           "tolerancia": int.tryParse(_toleranciaGeneralController.text) ?? 5,
         },
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _showSuccess("Horario aplicado a ${data['actualizados']} usuario(s)");
-
         if (_usuarioSeleccionado != null) {
           _fetchHorarios(_usuarioSeleccionado['id_usuario']);
         }
@@ -375,15 +662,16 @@ Future<void> _guardarHorarios() async {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          // Botón horario general
           IconButton(
             icon: const Icon(Icons.people),
             tooltip: "Horario general",
             onPressed: _mostrarDialogoHorarioGeneral,
           ),
+          // ✅ Ícono de calendario en vez de recargar
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchUsuarios,
+            icon: const Icon(Icons.calendar_month),
+            tooltip: "Días no laborables",
+            onPressed: _mostrarCalendario,
           ),
         ],
       ),
@@ -427,7 +715,6 @@ Future<void> _guardarHorarios() async {
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
-
                     Expanded(
                       child: ListView.builder(
                         itemCount: 7,
@@ -440,8 +727,7 @@ Future<void> _guardarHorarios() async {
                             child: Padding(
                               padding: const EdgeInsets.all(12),
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     mainAxisAlignment:
@@ -491,8 +777,7 @@ Future<void> _guardarHorarios() async {
                                             controller:
                                                 _entradaControllers[i],
                                             readOnly: true,
-                                            decoration:
-                                                const InputDecoration(
+                                            decoration: const InputDecoration(
                                               labelText: "Entrada",
                                               border: OutlineInputBorder(),
                                               suffixIcon:
@@ -508,8 +793,7 @@ Future<void> _guardarHorarios() async {
                                             controller:
                                                 _salidaControllers[i],
                                             readOnly: true,
-                                            decoration:
-                                                const InputDecoration(
+                                            decoration: const InputDecoration(
                                               labelText: "Salida",
                                               border: OutlineInputBorder(),
                                               suffixIcon:
@@ -531,8 +815,7 @@ Future<void> _guardarHorarios() async {
                                                 _toleranciaControllers[i],
                                             keyboardType:
                                                 TextInputType.number,
-                                            decoration:
-                                                const InputDecoration(
+                                            decoration: const InputDecoration(
                                               labelText: "Tolerancia (min)",
                                               border: OutlineInputBorder(),
                                             ),
@@ -548,9 +831,7 @@ Future<void> _guardarHorarios() async {
                         },
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
                     SizedBox(
                       width: double.infinity,
                       height: 50,

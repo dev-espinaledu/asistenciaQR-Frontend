@@ -22,8 +22,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
   bool _isLoading = false;
   bool _buscado = false;
 
-  final List<String?> _estados = [null, 'PUNTUAL', 'TARDE'];
-  final List<String> _estadosLabel = ['Todos', 'Puntual', 'Tarde'];
+  final List<String?> _estados = [null, 'PUNTUAL', 'TARDE', 'AUSENTE'];
+  final List<String> _estadosLabel = ['Todos', 'Puntual', 'Tarde', 'Ausente'];
 
   @override
   void initState() {
@@ -107,14 +107,14 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
   }
 
   Map<String, int> get _totales {
-    final map = {'PUNTUAL': 0, 'TARDE': 0, 'SIN_SALIDA': 0};
+    final map = {'PUNTUAL': 0, 'TARDE': 0, 'SIN_SALIDA': 0, 'AUSENTE': 0};
     for (final r in _resultados) {
       final estado = r['estado'] as String;
-      final sinSalida = r['hora_salida'] == null;
-      if (estado == 'PUNTUAL' || estado == 'TARDE') {
+      final sinSalida = r['hora_salida'] == null && estado != 'AUSENTE';
+      if (map.containsKey(estado)) {
         map[estado] = map[estado]! + 1;
       }
-      if (sinSalida) {
+      if (sinSalida && estado == 'SIN_SALIDA') {
         map['SIN_SALIDA'] = map['SIN_SALIDA']! + 1;
       }
     }
@@ -185,6 +185,8 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
         return Colors.orange;
       case 'SIN_SALIDA':
         return Colors.red;
+      case 'AUSENTE':
+        return Colors.purple;
       default:
         return Colors.grey;
     }
@@ -365,6 +367,13 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
                     totales['SIN_SALIDA']!,
                     Colors.red,
                     Icons.warning,
+                  ),
+                  const SizedBox(width: 8),
+                  _resumenCard(
+                    "Ausente",
+                    totales['AUSENTE']!,
+                    Colors.purple,
+                    Icons.person_off,
                   ),
                 ],
               ),

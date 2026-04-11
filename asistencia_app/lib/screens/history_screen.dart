@@ -68,6 +68,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case 'PUNTUAL': return Colors.green;
       case 'TARDE': return Colors.orange;
       case 'SIN_SALIDA': return Colors.red;
+      case 'AUSENTE': return Colors.purple;
       default: return Colors.grey;
     }
   }
@@ -77,6 +78,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case 'PUNTUAL': return Icons.check_circle;
       case 'TARDE': return Icons.schedule;
       case 'SIN_SALIDA': return Icons.warning;
+      case 'AUSENTE': return Icons.person_off;
       default: return Icons.help_outline;
     }
   }

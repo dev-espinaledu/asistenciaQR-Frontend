@@ -15,6 +15,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _totalUsuarios = 0;
   int _asistenciasHoy = 0;
   int _sinSalidaHoy = 0;
+  int _pendientesHoy = 0;
   bool _isLoading = true;
 
   @override
@@ -34,6 +35,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           _totalUsuarios = data['totalUsuarios'] as int;
           _asistenciasHoy = data['asistenciasHoy'] as int;
           _sinSalidaHoy = data['sinSalidaHoy'] as int;
+          _pendientesHoy = data['pendientesHoy'] as int;
         });
       } else {
         _showError("Error al cargar resumen");
@@ -78,40 +80,35 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     );
   }
 
-  Widget _statCard({
-    required String titulo,
-    required String valor,
-    required IconData icono,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+  Widget _statRow(String titulo, String valor, IconData icono, Color color) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: color.withValues(alpha: 0.15),
+          child: Icon(icono, color: color, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icono, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                valor,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
               Text(
                 titulo,
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
+              Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -170,29 +167,31 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _statCard(
-                        titulo: "Usuarios registrados",
-                        valor: "$_totalUsuarios",
-                        icono: Icons.people,
-                        color: Colors.indigo,
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: _statRow("Empleados", "$_totalUsuarios", Icons.people, Colors.indigo)),
+                              const SizedBox(width: 12),
+                              Expanded(child: _statRow("Asistencias", "$_asistenciasHoy", Icons.check_circle, Colors.green)),
+                            ],
+                          ),
+                          const Divider(height: 24),
+                          Row(
+                            children: [
+                              Expanded(child: _statRow("Pendientes", "$_pendientesHoy", Icons.hourglass_empty, Colors.orange)),
+                              const SizedBox(width: 12),
+                              Expanded(child: _statRow("Sin salida", "$_sinSalidaHoy", Icons.warning, Colors.red)),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      _statCard(
-                        titulo: "Asistencias hoy",
-                        valor: "$_asistenciasHoy",
-                        icono: Icons.check_circle,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 12),
-                      _statCard(
-                        titulo: "Sin salida hoy",
-                        valor: "$_sinSalidaHoy",
-                        icono: Icons.warning,
-                        color: Colors.red,
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -240,7 +239,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     subtitulo: "Consulta estadísticas por usuario y período",
                     icono: Icons.insights,
                     color: Colors.deepPurple,
-                    onTap: () => Navigator.pushNamed(context, "/admin/estadisticas"),
+                    onTap: () =>
+                        Navigator.pushNamed(context, "/admin/estadisticas"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
