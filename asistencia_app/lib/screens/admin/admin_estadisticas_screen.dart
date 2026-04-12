@@ -34,7 +34,10 @@ class _AdminEstadisticasScreenState extends State<AdminEstadisticasScreen> {
         setState(() {
           _usuarios = todos
               .where((u) =>
-                  u['rol'] == 'DOCENTE' || u['rol'] == 'ADMINISTRATIVO')
+                  u['rol'] == 'DOCENTE' ||
+                  u['rol'] == 'ADMINISTRATIVO' ||
+                  u['rol'] == 'SERVICIOS_GENERALES' ||
+                  u['rol'] == 'PRACTICANTE')
               .toList();
         });
       }

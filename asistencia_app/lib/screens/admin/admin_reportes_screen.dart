@@ -122,6 +122,11 @@ class _AdminReportesScreenState extends State<AdminReportesScreen> {
       if (map.containsKey(estado)) {
         map[estado] = map[estado]! + 1;
       }
+      // Contar como SIN_SALIDA si no tiene hora de salida
+      // y no es AUSENTE (independientemente del estado)
+      if (r['hora_salida'] == null && estado != 'AUSENTE') {
+        map['SIN_SALIDA'] = map['SIN_SALIDA']! + 1;
+      }
     }
     return map;
   }
