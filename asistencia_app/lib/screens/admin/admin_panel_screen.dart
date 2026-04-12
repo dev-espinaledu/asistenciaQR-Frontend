@@ -208,7 +208,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   const SizedBox(height: 12),
                   _menuButton(
                     titulo: "QR de Asistencia",
-                    // Subtítulo según rol
                     subtitulo: _rol == 'ADMIN'
                         ? "Genera un código QR válido"
                         : "Visualiza el código QR activo",
@@ -218,20 +217,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
-                    titulo: "Registro Manual",
-                    subtitulo: "Registra asistencia manualmente por usuario y fecha",
-                    icono: Icons.edit_calendar,
-                    color: Colors.blueAccent,
-                    onTap: () => Navigator.pushNamed(context, "/admin/registro-manual"),
-                  ),
-                  const SizedBox(height: 12),
-                  _menuButton(
                     titulo: "Historial General",
                     subtitulo: "Consulta y corrige registros de asistencia",
                     icono: Icons.history,
                     color: Colors.green,
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/admin/historial"),
+                    onTap: () => Navigator.pushNamed(context, "/admin/historial"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
@@ -239,13 +229,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     subtitulo: "Edita horarios por usuario y día",
                     icono: Icons.calendar_month,
                     color: Colors.orange,
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/admin/horarios"),
+                    onTap: () => Navigator.pushNamed(context, "/admin/horarios"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
                     titulo: "Gestionar Usuarios",
-                    // Subtítulo según rol
                     subtitulo: _rol == 'ADMIN'
                         ? "Crear, editar y eliminar usuarios"
                         : "Crear y editar usuarios",
@@ -259,8 +247,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     subtitulo: "Consulta estadísticas por usuario y período",
                     icono: Icons.insights,
                     color: Colors.deepPurple,
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/admin/estadisticas"),
+                    onTap: () => Navigator.pushNamed(context, "/admin/estadisticas"),
                   ),
                   const SizedBox(height: 12),
                   _menuButton(
@@ -268,9 +255,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     subtitulo: "Filtra asistencias por usuario, fecha y estado",
                     icono: Icons.bar_chart,
                     color: Colors.teal,
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/admin/reportes"),
+                    onTap: () => Navigator.pushNamed(context, "/admin/reportes"),
                   ),
+                  // Solo ADMIN - sin SizedBox extra para SUB_ADMIN
+                  if (_rol == 'ADMIN') ...[
+                    const SizedBox(height: 12),
+                    _menuButton(
+                      titulo: "Registro Manual",
+                      subtitulo: "Registra asistencia manualmente por usuario y fecha",
+                      icono: Icons.edit_calendar,
+                      color: Colors.blueAccent,
+                      onTap: () => Navigator.pushNamed(context, "/admin/registro-manual"),
+                    ),
+                  ],
                 ],
               ),
             ),
