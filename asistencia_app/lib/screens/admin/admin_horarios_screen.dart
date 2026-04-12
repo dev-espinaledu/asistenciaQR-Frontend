@@ -475,7 +475,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                               setSheetState(() => isApplying = true);
 
-                              // ✅ Roles seleccionados
+                              // Roles seleccionados
                               final roles = List.generate(
                                       rolesDisponibles.length, (i) => i)
                                   .where((i) => rolesSeleccionados[i])
@@ -495,7 +495,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
                                       "horaSalida":
                                           "${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}",
                                       "tolerancia": tolerancia,
-                                      "roles": roles, // ✅
+                                      "roles": roles,
                                     },
                                   );
                                   if (response.statusCode == 200) {
@@ -836,7 +836,6 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          // ✅ Nuevo horario general
           IconButton(
             icon: const Icon(Icons.people),
             tooltip: "Horario general",

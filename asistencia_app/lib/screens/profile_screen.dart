@@ -462,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     children: [
-                      // ✅ Botón que expande/colapsa
+                      // Botón que expande/colapsa
                       ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.indigo.shade50,
@@ -485,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _mostrarCambioPassword = !_mostrarCambioPassword),
                       ),
 
-                      // ✅ Formulario expandible
+                      // Formulario expandible
                       if (_mostrarCambioPassword) ...[
                         const Divider(height: 1),
                         Padding(

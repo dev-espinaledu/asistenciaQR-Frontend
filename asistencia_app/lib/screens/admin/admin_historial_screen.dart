@@ -453,7 +453,7 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          // ✅ Solo ADMIN puede eliminar
+          // Solo ADMIN puede eliminar
           if (_rol == 'ADMIN')
             IconButton(
               icon: const Icon(Icons.delete_sweep),

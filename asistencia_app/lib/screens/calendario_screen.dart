@@ -119,12 +119,12 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      // ✅ Solo lectura — no permite seleccionar
+                      // Solo lectura — no permite seleccionar
                       selectedDayPredicate: (day) {
                         final d = DateTime(day.year, day.month, day.day);
                         return _diasMarcados.contains(d);
                       },
-                      onDaySelected: null, // ✅ deshabilitar selección
+                      onDaySelected: null, // deshabilitar selección
                       onPageChanged: (focusedDay) {
                         setState(() => _focusedDay = focusedDay);
                       },
