@@ -140,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Parte superior con logo ──
+              // Parte superior con logo
               Expanded(
                 flex: 2,
                 child: Column(
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // ── Tarjeta del formulario ──
+              // Tarjeta del formulario
               Expanded(
                 flex: 3,
                 child: Container(
@@ -214,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 28),
 
-                          // ── Campo correo ──
+                          // Campo correo
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 16),
 
-                          // ── Campo contraseña ──
+                          // Campo contraseña
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
@@ -336,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 24),
 
-                          // ── Botón login ──
+                          // Botón login
                           SizedBox(
                             width: double.infinity,
                             height: 52,
@@ -369,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                           const SizedBox(height: 24),
-                          // ── Pie ──
+                          // Pie
                           Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,

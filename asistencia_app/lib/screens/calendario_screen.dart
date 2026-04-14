@@ -61,7 +61,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ── Info ──
+                // Info
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -91,7 +91,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
 
                 const SizedBox(height: 16),
 
-                // ── Calendario ──
+                // Calendario
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -134,7 +134,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
 
                 const SizedBox(height: 16),
 
-                // ── Lista de días no laborables ──
+                // Lista de días no laborables
                 if (_diasNoLaborables.isNotEmpty) ...[
                   const Text(
                     "Días marcados",

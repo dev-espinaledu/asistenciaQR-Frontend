@@ -168,7 +168,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     }
   }
 
-  // ── Nuevo horario general con días de la semana ──
+  // Nuevo horario general con días de la semana
   void _mostrarHorarioGeneral() {
     final List<bool> diasSeleccionados = List.generate(7, (i) => false);
     final List<String> rolesDisponibles = [
@@ -199,7 +199,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Título ──
+                  // Título
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -220,7 +220,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
                   ),
                   const Divider(height: 24),
 
-                  // ── Roles ──
+                  // Roles
                   const Text(
                     "Aplicar a roles",
                     style: TextStyle(fontWeight: FontWeight.w500),
@@ -274,7 +274,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                   const Divider(height: 24),
 
-                  // ── Días de la semana ──
+                  // Días de la semana
                   const Text(
                     "Días de la semana",
                     style: TextStyle(fontWeight: FontWeight.w500),
@@ -329,7 +329,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                   const Divider(height: 24),
 
-                  // ── Hora entrada ──
+                  // Hora entrada
                   const Text(
                     "Hora de entrada",
                     style: TextStyle(fontWeight: FontWeight.w500),
@@ -359,7 +359,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                   const SizedBox(height: 12),
 
-                  // ── Hora salida ──
+                  // Hora salida
                   const Text(
                     "Hora de salida",
                     style: TextStyle(fontWeight: FontWeight.w500),
@@ -389,7 +389,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                   const SizedBox(height: 12),
 
-                  // ── Tolerancia ──
+                  // Tolerancia
                   const Text(
                     "Tolerancia (minutos)",
                     style: TextStyle(fontWeight: FontWeight.w500),
@@ -407,7 +407,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Botón aplicar ──
+                  // Botón aplicar
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
@@ -529,7 +529,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     );
   }
 
-  // ── Calendario de días no laborables ──
+  // Calendario de días no laborables
   void _mostrarCalendario() {
     String tipoSeleccionado = 'GENERAL';
     dynamic usuarioCalendario;
@@ -624,7 +624,7 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
                     if (tipoSeleccionado == 'USUARIO') ...[
                       const SizedBox(height: 12),
                       DropdownButtonFormField<dynamic>(
-                        value: usuarioCalendario,
+                        initialValue: usuarioCalendario,
                         isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: "Seleccionar usuario",

@@ -108,7 +108,7 @@ class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ── Tarjeta de información ──
+                // Tarjeta de información
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -172,7 +172,7 @@ class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── Cambiar contraseña expandible ──
+                // Cambiar contraseña expandible
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -226,8 +226,9 @@ class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty)
+                                    if (v == null || v.isEmpty) {
                                       return "Requerido";
+                                    }
                                     return null;
                                   },
                                 ),
@@ -251,10 +252,12 @@ class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty)
+                                    if (v == null || v.isEmpty) {
                                       return "Requerido";
-                                    if (v.length < 6)
+                                    }
+                                    if (v.length < 6) {
                                       return "Debe tener al menos 6 caracteres";
+                                    }
                                     return null;
                                   },
                                 ),
@@ -279,10 +282,12 @@ class _PorteroPerfilScreenState extends State<PorteroPerfilScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty)
+                                    if (v == null || v.isEmpty) {
                                       return "Requerido";
-                                    if (v != _passwordNuevaController.text)
+                                    }
+                                    if (v != _passwordNuevaController.text) {
                                       return "Las contraseñas no coinciden";
+                                    }
                                     return null;
                                   },
                                 ),

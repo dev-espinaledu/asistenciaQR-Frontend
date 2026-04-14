@@ -398,8 +398,9 @@ class _AdminHistorialScreenState extends State<AdminHistorialScreen> {
       String path = "/asistencia/eliminar";
       final params = <String>[];
 
-      if (_usuarioEliminar != null)
+      if (_usuarioEliminar != null) {
         params.add("idUsuario=${_usuarioEliminar['id_usuario']}");
+      }
       if (_fechaEliminar != null) {
         final f = _fechaEliminar!;
         final fechaStr =

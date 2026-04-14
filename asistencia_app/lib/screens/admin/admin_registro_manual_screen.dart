@@ -193,9 +193,9 @@ class _AdminRegistroManualScreenState
                         ),
                         const Divider(height: 24),
 
-                        // ── Usuario ──
+                        // Usuario
                         DropdownButtonFormField<dynamic>(
-                          value: _usuarioSeleccionado,
+                          initialValue: _usuarioSeleccionado,
                           isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: "Usuario",
@@ -220,7 +220,7 @@ class _AdminRegistroManualScreenState
 
                         const SizedBox(height: 12),
 
-                        // ── Fecha ──
+                        // Fecha
                         InkWell(
                           onTap: _seleccionarFecha,
                           child: InputDecorator(
@@ -235,9 +235,9 @@ class _AdminRegistroManualScreenState
 
                         const SizedBox(height: 12),
 
-                        // ── Estado ──
+                        // Estado
                         DropdownButtonFormField<String>(
-                          value: _estadoSeleccionado,
+                          initialValue: _estadoSeleccionado,
                           decoration: const InputDecoration(
                             labelText: "Estado",
                             border: OutlineInputBorder(),
@@ -273,7 +273,7 @@ class _AdminRegistroManualScreenState
 
                         const SizedBox(height: 12),
 
-                        // ── Horas (ocultar si es AUSENTE) ──
+                        // (ocultar si es AUSENTE)
                         if (_estadoSeleccionado != 'AUSENTE') ...[
                           Row(
                             children: [

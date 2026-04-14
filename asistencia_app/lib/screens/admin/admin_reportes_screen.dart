@@ -259,7 +259,7 @@ Future<void> _exportarExcel() async {
             child: Column(
               children: [
                 DropdownButtonFormField<dynamic>(
-                  value: _usuarioSeleccionado,
+                  initialValue: _usuarioSeleccionado,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: "Usuario (opcional)",
@@ -323,7 +323,7 @@ Future<void> _exportarExcel() async {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String?>(
-                  value: _estadoSeleccionado,
+                  initialValue: _estadoSeleccionado,
                   decoration: const InputDecoration(
                     labelText: "Estado",
                     border: OutlineInputBorder(),

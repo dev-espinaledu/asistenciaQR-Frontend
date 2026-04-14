@@ -84,7 +84,7 @@ class _PorteroScreenState extends State<PorteroScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── Bienvenida ──
+          // Bienvenida
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(

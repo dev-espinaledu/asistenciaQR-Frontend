@@ -133,7 +133,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       ),
       body: Stack(
         children: [
-          // ── Cámara ──
+          // Cámara
           MobileScanner(
             controller: _controller,
             onDetect: (capture) {

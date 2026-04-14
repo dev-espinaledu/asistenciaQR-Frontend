@@ -340,8 +340,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                         const InputDecoration(labelText: "Contraseña"),
                     validator: (v) {
                       if (v == null || v.isEmpty) return "Requerido";
-                      if (v.length < 6)
+                      if (v.length < 6) {
                         return "Debe tener al menos 6 caracteres";
+                      }
                       return null;
                     },
                   ),

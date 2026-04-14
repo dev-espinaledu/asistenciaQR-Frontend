@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // ── Bienvenida ──
+                  // Bienvenida
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(

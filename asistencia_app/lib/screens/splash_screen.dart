@@ -38,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
       } else {
         await AuthService.logout();
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
         );

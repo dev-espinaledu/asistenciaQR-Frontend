@@ -270,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ── Tarjeta de información ──
+                // Tarjeta de información
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -334,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── Tarjeta estadísticas ──
+                // Tarjeta estadísticas
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -456,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── Tarjeta cambiar contraseña ──
+                // Tarjeta cambiar contraseña
                 Card(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),

@@ -231,7 +231,7 @@ class _AdminEstadisticasScreenState extends State<AdminEstadisticasScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // ── Selector de usuario ──
+                  // Selector de usuario
                   DropdownButtonFormField<dynamic>(
                     initialValue: _usuarioSeleccionado,
                     isExpanded: true,
