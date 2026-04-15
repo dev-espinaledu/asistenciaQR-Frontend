@@ -26,9 +26,9 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
 
   final List<Map<String, dynamic>> _horarios = List.generate(7, (i) => {
     "dia_semana": i + 1,
-    "hora_entrada": "07:00",
-    "hora_salida": "13:00",
-    "tolerancia_minutos": 5,
+    "hora_entrada": "06:50",
+    "hora_salida": "13:30",
+    "tolerancia_minutos": 10,
     "habilitado": i < 5,
   });
 
@@ -174,10 +174,10 @@ class _AdminHorariosScreenState extends State<AdminHorariosScreen> {
     final List<String> rolesDisponibles = [
       'DOCENTE', 'ADMINISTRATIVO', 'SERVICIOS_GENERALES', 'PRACTICANTE'
     ];
-    final List<bool> rolesSeleccionados = List.generate(4, (_) => true);
-    TimeOfDay horaEntrada = const TimeOfDay(hour: 7, minute: 0);
-    TimeOfDay horaSalida = const TimeOfDay(hour: 13, minute: 0);
-    int tolerancia = 5;
+    final List<bool> rolesSeleccionados = List.generate(4, (_) => false);
+    TimeOfDay horaEntrada = const TimeOfDay(hour: 6, minute: 55);
+    TimeOfDay horaSalida = const TimeOfDay(hour: 13, minute: 30);
+    int tolerancia = 10;
     bool isApplying = false;
 
     showModalBottomSheet(
